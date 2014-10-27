@@ -1,0 +1,44 @@
+What is the problem?
+	~ Description of Model
+		- There is a box (or toroid) of unit size
+		- There are N disks (all the same radius) in the box
+		- These disks cannot overlap each other
+		- the variable rho is the density of disks in the box
+		  (i.e. total area of disks divided by area of the box)
+		
+	~ Goal of the Model
+		- Mix the disks up so that they are randomly distributed
+	
+	~ What we want to find out
+		- Where is the crictical density (rho) where if it is
+		  too high we cannot say it mixes fast and if it lower
+		  it does mix fast
+	
+Why is the problem important?
+
+What is the old approach?
+	- Pick a random disk and pick a random location in the box
+	- If the disk can be placed there (i.e. does not overlap with
+	  another disk) then move the disk there, otherwise leave it
+	  where it was.
+
+What is the new approach?
+	- Pick a random disk and a random direction
+	- move the disk in the chosen direction for a distance epsilon
+	- If the disk collides with another disk, stop moving that disk
+	  and move the collided disk in the same direction for the rest
+	  of the distance.  Repeat process if this new disk collides
+
+What is the intuition that this new approach is better?
+	- This sliding approach is what is used in practice.
+	- It is said to appear to mix faster than other approaches, but
+	  there is no theoretical guarentee. (Just by empircal observation).
+
+Another variation of this model.
+	- There is another variation of this model where the number of
+	  disks is not fixed.  Disks are allowed to leave or enter the
+	  box.
+	- A parameter lambda is used for the probability a disk will
+	  added or removed from the box.
+	- Something to learn from this model is how rho and lambda are
+	  correllated.
