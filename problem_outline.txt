@@ -10,16 +10,16 @@ What is the problem?
 		- Mix the disks up so that they are randomly distributed
 	
 	~ What we want to find out
-		- Where is the crictical density (rho) where if it is
+		- Where is the critical density (rho) where if it is
 		  too high we cannot say it mixes fast and if it lower
 		  it does mix fast
 		- More specifically we want to find upper and lower
-		  bounds on the crictical rho
+		  bounds on the critical rho
 	
 Why is the problem important?
-	- Physists create simulations where the disks need to be
+	- Physicists create simulations where the disks need to be
 	  uniformly distributed. If we can determine better bounds,
-	  we can guarentee fast mixing times with in a certain
+	  we can guarantee fast mixing times with in a certain
 	  confidence level.
 
 What is the old approach?
@@ -38,7 +38,7 @@ What is the new approach?
 What is the intuition that this new approach is better?
 	- This sliding approach is what is used in practice.
 	- It is said to appear to mix faster than other approaches, but
-	  there is no theoretical guarentee. (Just by empircal observation).
+	  there is no theoretical guarantee. (Just by empirical observation).
 
 Another variation of this model.
 	- There is another variation of this model where the number of
@@ -47,4 +47,4 @@ Another variation of this model.
 	- A parameter lambda is used for the probability a disk will
 	  added or removed from the box.
 	- Something to learn from this model is how rho and lambda are
-	  correllated.
+	  correlated.​
