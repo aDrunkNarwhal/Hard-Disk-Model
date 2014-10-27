@@ -13,8 +13,14 @@ What is the problem?
 		- Where is the crictical density (rho) where if it is
 		  too high we cannot say it mixes fast and if it lower
 		  it does mix fast
+		- More specifically we want to find upper and lower
+		  bounds on the crictical rho
 	
 Why is the problem important?
+	- Physists create simulations where the disks need to be
+	  uniformly distributed. If we can determine better bounds,
+	  we can guarentee fast mixing times with in a certain
+	  confidence level.
 
 What is the old approach?
 	- Pick a random disk and pick a random location in the box
