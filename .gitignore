@@ -28,6 +28,11 @@ var/
 *.manifest
 *.spec
 
+# LaTeX
+LaTeX/*.aux
+LaTeX/*.fdb_latexmk
+LaTeX/*.toc
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

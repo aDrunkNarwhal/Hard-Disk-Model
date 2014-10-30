@@ -12,7 +12,7 @@
 %\tableofcontents
 
 \section*{Description of the Problem}
-There is a two dimensional box where the edges wrap around to each other (i.e. a toroid).  Within this box there are $N$ disks with radius $r$ that cannot overlap one another.  The percentange of the area that this disks take up within the box is represented by $\rho$.  In other words,
+There is a two dimensional box (can be higher dimensions) where the edges wrap around to each other (i.e. a toroid).  Within this box there are $N$ disks with radius $r$ that cannot overlap one another.  The percentange of the area that this disks take up within the box is represented by $\rho$.  In other words,
 
 \begin{displaymath}
   \rho = \frac{N*\pi r^2}{Area\ of\ Box}.
@@ -21,6 +21,8 @@ There is a two dimensional box where the edges wrap around to each other (i.e. a
 The goal of this problem is to determine when it is possible to efficiently sample random configurations below some critical density $\rho_c$.
 
 \section*{Importance of the Problem}
+
+The hard disk model has applications in physics; more specifically it can show multiple phase transitions if the problem is mapped to an ideal-gas model.  When the density $\rho$ is sufficiently high, the configurations represent a more solid or crystaline form.  For lower densities, the configurations are more gas like.  There is a small range of densities where a hexatic phase occurs \cite{Bernard}.
 
 \section*{Approaches to the Problem}
 
@@ -40,13 +42,15 @@ The intuition that this dynamic might perform better is that it is used in pract
 
 \section*{Other Ideas}
 
+There is a varaition of this model where disks are allowed to enter and leave the box (i.e. toroid).  This adds an extra variable $\lambda$ to the system which controls to probability of a disk entering or leaving the system.  Since $N$ is not constant, neither is the density $\rho$.  A question that could be asked about this model would be how $\rho$ and $\lambda$ are related to each other.  Given some fixed $\lambda$ value, what would $\rho$ converge to after a sufficient amount of time steps? Or is there some critical range for $\lambda$ where the density never converges?
+
 \begin{thebibliography}{9}
 
-\bibitem{Hayes}
-  Thomas Hayes, Cristopher Moore.
-  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
-  arXiv preprint,
-  arXiv:1407.1930 (2014).
+\bibitem{Bernard}
+  Etienne P Bernard, Werner Krauth, and David B Wilson.
+  \emph{Event-chain monte carlo algorithms for hard-sphere systems.}
+  Physical Review E,
+  80(5):056704, 2009.
 
 \bibitem{Mak}
   C. H. Mak. 
@@ -66,6 +70,11 @@ The intuition that this dynamic might perform better is that it is used in pract
   In Proc. 14th Intl. Symp. on Algorithms and Computation (ISAAC),
   pages 663–675, 2003.
 
+\bibitem{Hayes}
+  Thomas Hayes, Cristopher Moore.
+  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
+  arXiv preprint,
+  arXiv:1407.1930 (2014).
 
 \end{thebibliography}
 
