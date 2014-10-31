@@ -40,6 +40,9 @@ htmlcov/
 nosetests.xml
 coverage.xml
 
+# Temp files
+*.*~
+
 # Translations
 *.mo
 *.pot

@@ -1,0 +1,72 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+
+\title{Hard Disk Model: Overview}
+\author{Matt Peterson \thanks{University of New Mexico for Computer Science, mpeterson@unm.edu. Sandia National Laboratories, mgpeter@sandia.gov} \and Thomas Hayes \thanks{University of New Mexico for Computer Science, hayes@cs.unm.edu}}
+
+\begin{document}
+
+\maketitle
+%\tableofcontents
+
+\section*{Description of the Problem}
+There is a two dimensional box where the edges wrap around to each other (i.e. a toroid).  Within this box there are $N$ disks with radius $r$ that cannot overlap one another.  The percentange of the area that this disks take up within the box is represented by $\rho$.  In other words,
+
+\begin{displaymath}
+  \rho = \frac{N*\pi r^2}{Area\ of\ Box}.
+\end{displaymath}
+
+The goal of this problem is to determine when it is possible to efficiently sample random configurations below some critical density $\rho_c$.
+
+\section*{Importance of the Problem}
+
+\section*{Approaches to the Problem}
+
+Markov chain Monte Carlo algorithms have been used in the past to sample configurations from this model.  Experimental results suggest that $\rho_c \approx 0.7$ \cite{Mak}\cite{Piasecki}.
+
+\subsection*{Old Approach}
+
+One of the easiest ways is to pick up a disk and attempt to move it to a random location within the box.  This process is referred to as \textit{single-disk global-move dynamics}.  More precisely a disk $i$ is pick uniformly at random and a location $x$ in the box is also picked uniformly at random.  If the disk $i$ can be placed at location $x$ without overlapping another disk then we do it, otherwise we leave disk $i$ in its original location.  Using this dynamic and a path coupling agrument the result yields $\rho_c \le 1/8 = 0.125$ \cite{Kannan} for when the box is two dimensions.
+
+Hayes and Moore \cite{Hayes} later improved the bound to $\rho_c \le 0.154483..$.  To accomplish this they used the same single-disk global-move dynamics and path coupling arguments, but modified the Hamming metric.  The normal Hamming metric is 0 if the disks are in the same location in both chains, and 1 if the disks are in different locations.  Hayes and Moore designed a Hamming metric that depends continuously on the difference between the two positions.  More importantly it goes to zero continuously as the two positions coincide.
+
+\subsection*{New Approach}
+
+Instead of using single-disk global-move dynamics one could use a \textit{single-disk sliding-move dynamics}.  The idea behind this is to pick a disk and direction uniformly at random.  The disk attempts to move in the picked direction a distance $\epsilon$.  If the disk bumps into another disk while moving, the picked disk stops moving and the bumped into disk begins moving is the same direction for the remainder of the distance.  If this new moving disk bumps into another disk, the process is repeated.
+
+The intuition that this dynamic might perform better is that it is used in practice.  By empircal observations this approach appears to mix well.
+
+\section*{Other Ideas}
+
+\begin{thebibliography}{9}
+
+\bibitem{Hayes}
+  Thomas Hayes, Cristopher Moore.
+  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
+  arXiv preprint,
+  arXiv:1407.1930 (2014).
+
+\bibitem{Mak}
+  C. H. Mak. 
+  \emph{Large-scale simulations of the two-dimensional melting of hard disks}.
+  Phys. Rev. E,
+  73(6):065104, 2006.
+
+\bibitem{Piasecki}
+  Jaroslaw Piasecki, Piotr Szymczak, and John J Kozak.
+  \emph{Prediction of a structural transition in the hard disk fluid}.
+  The Journal of chemical physics,
+  133:164507, 2010.
+
+\bibitem{Kannan}
+  Ravi Kannan, Michael W. Mahoney, and Ravi Montenegro.
+  \emph{Rapid mixing of several Markov chains for a hard-core model}.
+  In Proc. 14th Intl. Symp. on Algorithms and Computation (ISAAC),
+  pages 663–675, 2003.
+
+
+\end{thebibliography}
+
+\end{document}
