@@ -2,6 +2,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
+\usepackage{fullpage}
 
 \title{Hard Disk Model: Overview}
 \author{Matt Peterson \thanks{University of New Mexico for Computer Science, mpeterson@unm.edu. Sandia National Laboratories, mgpeter@sandia.gov} \and Thomas Hayes \thanks{University of New Mexico for Computer Science, hayes@cs.unm.edu}}
@@ -12,60 +13,75 @@
 %\tableofcontents
 
 \section*{Description of the Problem}
-There is a two dimensional box where the edges wrap around to each other (i.e. a toroid).  Within this box there are $N$ disks with radius $r$ that cannot overlap one another.  The percentange of the area that this disks take up within the box is represented by $\rho$.  In other words,
+
+Given a box with some number of molecules in it, one can observe different behaviors of the system by varying different parameter (for example, temperature or density of molecules).  The molecules can structure themselves as a gas where there is plenty of room between them, or even a crystalline structure where the molecules are vary compact with little to no room between them.  Of course these structures are influenced by the parameters of the system.  When the density of the molecules is low, the structure the box tends to be more gases.  As the density is increased the structure leans towards a more crystalline configuration.
+
+The way that this is model is by having a two dimensional box where the edges wrap around to each other (i.e. a toroid).  Within this box there are $N$ disks with radius $r$ that cannot overlap one another.  The percentage of the area that this disks take up within the box is represented by $\rho$.  In other words,
 
 \begin{displaymath}
   \rho = \frac{N*\pi r^2}{Area\ of\ Box}.
 \end{displaymath}
 
-The goal of this problem is to determine when it is possible to efficiently sample random configurations below some critical density $\rho_c$.
 
 \section*{Importance of the Problem}
 
+There are two different ways of studying this model; when does the model switch phases (e.g. gases to liquid) and when does the model mix quickly.  This first is from a physics point of view were one looks for a critical point in a given parameter.  With density $\rho$, one tries to find the critical density $\rho_c$ where $\rho < \rho_c$ the system is a gases configuration, and $\rho > \rho_c$ the system is in a liquid configuration. Other phase transitions can be observed and would have a different value for $\rho_c$.
+
+The other way to view the problem is from the eyes of computer scientist (or statistical physicist).  If one wants a randomly distributed configuration it is important to know how long it takes to get to stationary distribution.  It is believed that there is some $\rho_c$ where $\rho < \rho_c$ the mixing time scales polynomially, and $\rho > \rho_c$ the mixing time scales exponentially.  There is a sufficient lack of knowledge of where this $\rho_c$ exists.
+
+There is some evidence that these two view points of $\rho_c$ are related.  One piece of evidence is that when the configuration is gases or liquid, the mixing time is faster.  If the system is more crystalline or solid the mixing time is much slower.
+
 \section*{Approaches to the Problem}
 
-Markov chain Monte Carlo algorithms have been used in the past to sample configurations from this model.  Experimental results suggest that $\rho_c \approx 0.7$ \cite{Mak}\cite{Piasecki}.
+Numerical results (e.g. \cite{Mak}\cite{Piasecki}) show that the critical density for a phase transition to a solid configuration is $\rho_c \approx 0.7$. Our intuition tells us that the bound on critical density for mixing time is $\rho_c \le 0.7$. 
 
 \subsection*{Old Approach}
 
-One of the easiest ways is to pick up a disk and attempt to move it to a random location within the box.  This process is referred to as \textit{single-disk global-move dynamics}.  More precisely a disk $i$ is pick uniformly at random and a location $x$ in the box is also picked uniformly at random.  If the disk $i$ can be placed at location $x$ without overlapping another disk then we do it, otherwise we leave disk $i$ in its original location.  Using this dynamic and a path coupling agrument the result yields $\rho_c \le 1/8 = 0.125$ \cite{Kannan} for when the box is two dimensions.
+One of the easiest ways is to pick up a disk and attempt to move it to a random location within the box.  This process is referred to as \textit{single-disk global-move dynamics}.  More precisely a disk $i$ is pick uniformly at random and a location $x$ in the box is also picked uniformly at random.  If the disk $i$ can be placed at location $x$ without overlapping another disk then we do it, otherwise we leave disk $i$ in its original location.  Using this dynamic and a path coupling argument the result yields $\rho_c \le 1/8 = 0.125$ \cite{Kannan} for when the box is two dimensions.
 
 Hayes and Moore \cite{Hayes} later improved the bound to $\rho_c \le 0.154483..$.  To accomplish this they used the same single-disk global-move dynamics and path coupling arguments, but modified the Hamming metric.  The normal Hamming metric is 0 if the disks are in the same location in both chains, and 1 if the disks are in different locations.  Hayes and Moore designed a Hamming metric that depends continuously on the difference between the two positions.  More importantly it goes to zero continuously as the two positions coincide.
 
 \subsection*{New Approach}
 
-Instead of using single-disk global-move dynamics one could use a \textit{single-disk sliding-move dynamics}.  The idea behind this is to pick a disk and direction uniformly at random.  The disk attempts to move in the picked direction a distance $\epsilon$.  If the disk bumps into another disk while moving, the picked disk stops moving and the bumped into disk begins moving is the same direction for the remainder of the distance.  If this new moving disk bumps into another disk, the process is repeated.
+Instead of using single-disk global-move dynamics one could use a \textit{event chain dynamics}.  The idea behind this is to pick a disk and direction uniformly at random.  The disk attempts to move in the picked direction a distance $\epsilon$.  If the disk bumps into another disk while moving, the picked disk stops moving and the bumped into disk begins moving is the same direction for the remainder of the distance.  If this new moving disk bumps into another disk, the process is repeated.
 
-The intuition that this dynamic might perform better is that it is used in practice.  By empircal observations this approach appears to mix well.
+The intuition that this dynamic might perform better is that it is used in practice.  By empirical observations this approach appears to mix well.  The hope is that this approach may lead to a bound closer to $\rho_c \le 0.7$.
 
 \section*{Other Ideas}
 
+There is a variation of this model where disks are allowed to enter and leave the box (i.e. toroid).  This adds an extra variable $\lambda$ to the system which controls to probability of a disk entering or leaving the system.  Since $N$ is not constant, neither is the density $\rho$.  A question that could be asked about this model would be how $\rho$ and $\lambda$ are related to each other.  Given some fixed $\lambda$ value, what would $\rho$ converge to after a sufficient amount of time steps? Or is there some critical range for $\lambda$ where the density never converges?
+
 \begin{thebibliography}{9}
 
-\bibitem{Hayes}
-  Thomas Hayes, Cristopher Moore.
-  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
-  arXiv preprint,
-  arXiv:1407.1930 (2014).
+%\bibitem{Bernard}
+%  Etienne Bernard, Werner Krauth, and David Wilson.
+%  \emph{Event-chain monte carlo algorithms for hard-sphere systems.}
+%  Physical Review E,
+%  80(5):056704, 2009.
 
 \bibitem{Mak}
-  C. H. Mak. 
+  Chi Mak. 
   \emph{Large-scale simulations of the two-dimensional melting of hard disks}.
   Phys. Rev. E,
   73(6):065104, 2006.
 
 \bibitem{Piasecki}
-  Jaroslaw Piasecki, Piotr Szymczak, and John J Kozak.
+  Jaroslaw Piasecki, Piotr Szymczak, and John Kozak.
   \emph{Prediction of a structural transition in the hard disk fluid}.
   The Journal of chemical physics,
   133:164507, 2010.
 
 \bibitem{Kannan}
-  Ravi Kannan, Michael W. Mahoney, and Ravi Montenegro.
+  Ravi Kannan, Michael Mahoney, and Ravi Montenegro.
   \emph{Rapid mixing of several Markov chains for a hard-core model}.
   In Proc. 14th Intl. Symp. on Algorithms and Computation (ISAAC),
   pages 663–675, 2003.
 
+\bibitem{Hayes}
+  Thomas Hayes and Cristopher Moore.
+  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
+  arXiv preprint,
+  arXiv:1407.1930 (2014).
 
 \end{thebibliography}
 
