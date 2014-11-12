@@ -1,0 +1,81 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{fullpage}
+
+\title{Phase Transitions in the Hard Spheres Model}
+\author{Matt Peterson \thanks{University of New Mexico for Computer Science, mpeterson@unm.edu. Sandia National Laboratories, mgpeter@sandia.gov} \and Thomas Hayes \thanks{University of New Mexico for Computer Science, hayes@cs.unm.edu}}
+
+\begin{document}
+
+\maketitle
+%\tableofcontents
+
+\section*{Motivation}
+
+Why does a collection of water molecules suddenly freeze or boil when we slightly change it's temperature?  From the perspective of individual water molecules, very little seems to change from 99$^\circ$C to 101$^\circ$C.  But macroscopically, we see a huge qualitative difference.  More generally, even very simple mathematical models of collections of particles are observed to undergo dramatic \textit{phase transitions} as a controlling parameter, such as temperature or density, is varied.
+
+The most natural transition to study is from a gaseous phase, defined as one in which there is no long-distance correlation between the positions of particles, and a more crystalline phase in which there is.  From a physics point of view, one looks for a critical point in a controlling parameter.  With density $\rho$, one tries to find the critical density $\rho_c$ where $\rho < \rho_c$ the molecules are in a gaseous configuration, and $\rho > \rho_c$ they are in a crystalline configuration.
+
+A seemingly different way to view the problem is through the eyes of a computer scientist.  If one wants a randomly distributed configuration it is important to know the convergence rate.  It is believed that there is some $\rho_c$ where $\rho < \rho_c$ the convergence rate scales polynomially, and $\rho > \rho_c$ it scales exponentially.
+
+There is some evidence that the answers to these two questions are related.  Empirical evidence has shown that the convergence rate is faster when the configuration is gaseous and slower when it is crystalline.  But the values for these convergence rates are not known.
+
+\section*{Proposed Work}
+
+%TODO: Talk about model. Talk about single-sphere global-move dynamics. Edit modified Hamming metric. Talk about even chain dynamics. Explain why we think this will work better in crystalline configurations.
+
+One such model for a collection of molecules is the \textit{Hard Spheres Model}.  There is a box with volume $V$ and $N$ non-overlapping spheres of radius $r$ contained inside.  The percentage of the volume that the spheres take up within the box is represented by $\rho$, that is,
+\begin{displaymath}
+  \rho = \frac{N(\frac{4}{3}\pi r^3)}{V}.
+\end{displaymath}
+This $\rho$ is also known as the density parameter. %Numerical results (e.g. \cite{Mak}\cite{Piasecki}) show that the critical density for a phase transition to a solid configuration is $\rho_c \approx 0.7$. Our intuition tells us that the bound on critical density for mixing time is $\rho_c \le 0.7$. 
+
+One of the simplest dynamics for finding a convergence rate to a random distribution is the \textit{single-sphere global-move dynamics}.  More precisely, a sphere and location with in the box are both pick uniformly at random.  If the picked sphere can be placed at the picked location without overlapping another sphere, then it is moved there.  Otherwise the move is rejected and the sphere remains in it's original location.  Combining this dynamic with a path coupling argument, $\rho_c \le 1/8 = 0.125$ \cite{Kannan} for the convergence rate transitioning from polynomial to exponential, when the box is two dimensional.
+
+The basic idea for the coupling argument is that there are two configurations of spheres, $X$ and $Y$, that differ only in the position of a single sphere.  Then one wants to find the critical value of $\rho$ in which the Hamming distance between $X$ and $Y$ is expected to increase.  The typical Hamming metric for the coupling argument counts the number of spheres whose positions differ under $X$ and $Y$.  In other words, each sphere that disagrees contributes 1 to the sum.  Hayes and Moore \cite{Hayes} designed a modified Hamming metric that depends continuously on the difference between the two sphere positions.  So a sphere whose two positions are very close contributes a small fraction less than 1.  With this they improved the bound of the critical density to $\rho_c \le 0.154483..$ for when the box is two dimensional.
+
+Another dynamic is the \textit{event chain dynamics}.  A sphere and direction are both chosen uniformly at random.  The sphere attempts to move in the picked direction a distance $d$.  If the sphere collides with anther sphere after only moving a distance $\epsilon < d$, then the sphere stops at the point of collision and the collided sphere attempts to move in the same picked direction for a distance $d - \epsilon$.  If the new moving sphere collides with another sphere, the process is repeated.
+
+The hope is that event chain dynamics will still converge quickly at higher densities where the rejected move rate of single-sphere global-move dynamics is high.  The intuition being that event chain dynamics never rejects a move, only the collision rate increases.  By empirical observations the dynamic appears to have a fast convergence rate. %The hope is that this approach may lead to a bound closer to $\rho_c \le 0.7$.
+
+%OLD STUFF
+
+There is a variation of this model where spheres are allowed to enter and leave the box.  This adds an extra variable $\lambda$ to the system which controls the probability of a sphere entering or leaving the system.  Since $N$ is not constant, neither is the density $\rho$.  A question that could be asked about this model would be how $\rho$ and $\lambda$ are related to each other.  Given some fixed $\lambda$ value, what would $\rho$ converge to after a sufficient amount of time steps? Or is there some critical range for $\lambda$ where the density never converges?
+
+\begin{thebibliography}{9}
+
+%\bibitem{Bernard}
+%  Etienne Bernard, Werner Krauth, and David Wilson.
+%  \emph{Event-chain monte carlo algorithms for hard-sphere systems.}
+%  Physical Review E,
+%  80(5):056704, 2009.
+
+\bibitem{Mak}
+  Chi Mak. 
+  \emph{Large-scale simulations of the two-dimensional melting of hard disks}.
+  Phys. Rev. E,
+  73(6):065104, 2006.
+
+\bibitem{Piasecki}
+  Jaroslaw Piasecki, Piotr Szymczak, and John Kozak.
+  \emph{Prediction of a structural transition in the hard disk fluid}.
+  The Journal of chemical physics,
+  133:164507, 2010.
+
+\bibitem{Kannan}
+  Ravi Kannan, Michael Mahoney, and Ravi Montenegro.
+  \emph{Rapid mixing of several Markov chains for a hard-core model}.
+  In Proc. 14th Intl. Symp. on Algorithms and Computation (ISAAC),
+  pages 663–675, 2003.
+
+\bibitem{Hayes}
+  Thomas Hayes and Cristopher Moore.
+  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
+  arXiv preprint,
+  arXiv:1407.1930 (2014).
+
+\end{thebibliography}
+
+\end{document}
