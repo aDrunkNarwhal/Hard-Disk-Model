@@ -1,0 +1,86 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{fullpage}
+
+\title{Phase Transitions in the Hard Spheres Model}
+\author{Matt Peterson \thanks{University of New Mexico for Computer Science, mpeterson@unm.edu. Sandia National Laboratories, mgpeter@sandia.gov} \and Thomas Hayes \thanks{University of New Mexico for Computer Science, hayes@cs.unm.edu}}
+
+\begin{document}
+
+\maketitle
+%\tableofcontents
+
+\section*{Motivation}
+
+Why does a collection of water molecules suddenly freeze or boil when we slightly change it's temperature?  From the perspective of individual water molecules, very little seems to change from 99$^\circ$C to 101$^\circ$C.  But macroscopically, we see a huge qualitative difference.  More generally, even very simple mathematical models of collections of particles are observed to undergo dramatic \textit{phase transitions} as a controlling parameter, such as temperature or density, is varied.
+
+The most natural transition to study is from a gaseous phase, defined as one in which there are no long-distance correlations between the positions of particles, to a more crystalline phase in which there are.  From a physics point of view, one looks for a critical point in a controlling parameter.  With density $\rho$, one tries to find the critical density $\rho_c$ where $\rho$ slightly below $\rho_c$ correspond to a gaseous phase, while $\rho$ slightly above correspond to a more viscous fluid.
+
+From a computer scientist perspective, if one wants to sample random configurations for this model it is important to know the running time of some algorithm that generates these random configurations.  A very simple Markov chain Monte Carlo (MCMC) algorithm to sample random configurations in the model is the \textit{Single-Sphere Global-Move} dynamic (described later on page 2).  It is believed that there is some $\rho_c$ where for $\rho < \rho_c$ the run time of the algorithm scales polynomially, and for $\rho > \rho_c$ it scales exponentially.
+
+There is some evidence that the answers to these two questions are related.  Empirical evidence has shown that the run time of the algorithm is faster when the configuration is gaseous and slower when it is crystalline.  But the values for these convergence rates are not known.
+
+\section*{Proposed Work}
+
+One such model for a collection of molecules is the \textit{Hard Spheres Model}.  There is a box with volume $V$ and $N$ non-overlapping spheres of radius $r$ contained inside.  The percentage of the volume that the spheres take up within the box is represented by $\rho$, that is,
+\begin{displaymath}
+  \rho = \frac{4N\pi r^3}{3V}.
+\end{displaymath}
+This $\rho$ is also known as the density parameter. Numerical results (e.g. \cite{Mak}\cite{Piasecki}) show that the critical density for a phase transition to a crystalline configuration is $\rho_c \approx 0.7$.
+
+\subsection*{Single-Sphere Global-Move Dynamics}
+
+One of the simplest dynamics for finding a convergence rate to a random distribution is the \textit{single-sphere global-move dynamics}.  In this Markov chain, a sphere and location with in the box are both picked uniformly at random.  If the picked sphere can be placed at the picked location without overlapping another sphere, then it is moved there.  Otherwise the move is rejected and the sphere remains in its original location.  By combining this dynamic with a path-coupling argument, we get $\rho_c \ge 1/16$ for the convergence rate transitioning from polynomial to exponential.  More generally, for $d$ dimensions $\rho_c \ge 2^{-(d + 1)}$ \cite{Kannan}.
+
+The basic idea for the coupling argument is that there are two configurations of spheres, $X$ and $Y$, that differ only in the position of a single sphere.  Then one wants to find the critical value of $\rho$ in which the Hamming distance between $X$ and $Y$ is expected to increase.  The typical Hamming metric for the coupling argument counts the number of spheres whose positions differ under $X$ and $Y$.  In other words, each sphere that disagrees contributes 1 to the sum.  Hayes and Moore \cite{Hayes} designed a modified Hamming metric that depends continuously on the difference between the two sphere positions.  So a sphere whose two positions are very close contributes a small fraction less than 1.  With this they improved the bound of the critical density from $\rho_c \ge 0.125$ to $\rho_c \ge 0.154483..$, in the two dimensional setting.
+
+\subsection*{Event Chain Dynamics}
+
+In the \textit{event chain dynamics}, a sphere and direction are both chosen uniformly at random.  The sphere attempts to move in the picked direction a distance $\delta$.  If the sphere collides with anther sphere after only moving a distance $\epsilon < \delta$, then the sphere stops at the point of collision and the collided sphere attempts to move in the same picked direction for a distance $\delta - \epsilon$.  If the new moving sphere collides with another sphere, the process is repeated.
+
+The hope is that event chain dynamics will still converge quickly at higher densities where the rejected move rate of single-sphere global-move dynamics is high.  The intuition being that event chain dynamics never rejects a move, only the collision rate increases.  By empirical observations this event chain dynamic appears to have a fast convergence rate.
+
+\section*{Open Questions}
+
+Through empirical observation event chain dynamics work well for finding a random configuration for the Hard-Sphere Model; but the value of the bounds for the critical density are not known.  By finding an exact value, there could be a guarantee of obtaining a fast convergence rate when the density is low enough. As well as implications of where the phase transition to a crystalline structure occurs.
+
+There is also another parameter of interest, $\lambda$, that controls the probability of a sphere entering or leaving the box. The number of spheres $N$ within the box does not remain constant, which means $\rho$ does not either.  An interesting question to ask is given some fixed $\lambda$ value, what would $\rho$ converge to?  If these two parameters have a strong relation, is there some dynamic involving $\lambda$ that would allow fast convergence rates at high densities?
+
+
+\begin{thebibliography}{9}
+
+%\bibitem{Bernard}
+%  Etienne Bernard, Werner Krauth, and David Wilson.
+%  \emph{Event-chain monte carlo algorithms for hard-sphere systems.}
+%  Physical Review E,
+%  80(5):056704, 2009.
+
+\bibitem{Mak}
+  Chi Mak. 
+  \emph{Large-scale simulations of the two-dimensional melting of hard disks}.
+  Phys. Rev. E,
+  73(6):065104, 2006.
+
+\bibitem{Piasecki}
+  Jaroslaw Piasecki, Piotr Szymczak, and John Kozak.
+  \emph{Prediction of a structural transition in the hard disk fluid}.
+  The Journal of chemical physics,
+  133:164507, 2010.
+
+\bibitem{Kannan}
+  Ravi Kannan, Michael Mahoney, and Ravi Montenegro.
+  \emph{Rapid mixing of several Markov chains for a hard-core model}.
+  In Proc. 14th Intl. Symp. on Algorithms and Computation (ISAAC),
+  pages 663–675, 2003.
+
+\bibitem{Hayes}
+  Thomas Hayes and Cristopher Moore.
+  \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
+  arXiv preprint,
+  arXiv:1407.1930 (2014).
+
+\end{thebibliography}
+
+\end{document}
