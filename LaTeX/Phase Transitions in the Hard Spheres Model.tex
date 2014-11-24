@@ -2,10 +2,10 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
-%\usepackage{fullpage}
+\usepackage{fullpage}
 
 \title{Phase Transitions in the Hard Spheres Model}
-\author{Matt Peterson \thanks{University of New Mexico for Computer Science, mpeterson@unm.edu. Sandia National Laboratories, mgpeter@sandia.gov} \and Thomas Hayes \thanks{University of New Mexico for Computer Science, hayes@cs.unm.edu}}
+\author{Matt Peterson \thanks{Sandia National Laboratories, mgpeter@sandia.gov} \and Thomas Hayes \thanks{University of New Mexico for Computer Science, hayes@cs.unm.edu}}
 
 \begin{document}
 
@@ -32,29 +32,23 @@ This $\rho$ is also known as the density. Numerical results (see, e.g., \cite{Ma
 
 \subsection*{Single-Sphere Global-Move Dynamics}
 
-A dynamics for generating random configurations in the Hard Spheres Model is the \textit{Single-Sphere Global-Move dynamics}.  In this Markov chain, a sphere and location within the box are both picked uniformly at random.  If the picked sphere can be placed at the picked location without overlapping another sphere, then it is moved there.  Otherwise the move is rejected and the sphere remains in its original location.  By a path-coupling argument Kannan, Mahoney, and Montenegro \cite{Kannan} proved that $\rho_c \ge 1/16$ for the running time transitioning from polynomial to exponential.  More generally, for $d$ dimensions $\rho_c \ge 2^{-(d + 1)}$.
+A dynamics for generating random configurations in the Hard Spheres Model is the \textit{Single-Sphere Global-Move dynamics}.  In this Markov chain, a sphere and location within the box are both picked uniformly at random.  If the picked sphere can be placed at the picked location without overlapping another sphere, then it is moved there.  Otherwise the move is rejected and the sphere remains in its original location.  By a path-coupling argument (see, e.g., \cite{Bubley}) Kannan, Mahoney, and Montenegro \cite{Kannan} proved that $\rho_c \ge 1/16$ for the running time transitioning from polynomial to exponential.  More generally, for $d$ dimensions $\rho_c \ge 2^{-(d + 1)}$.
 
 The basic idea for the coupling argument is that there are two configurations of spheres, $X$ and $Y$, that differ only in the position of a single sphere.  Then one wants to find the greatest value of $\rho$ below which the Hamming distance between $X$ and $Y$ is expected to decrease.  The typical Hamming metric for the coupling argument counts the number of spheres whose positions differ under $X$ and $Y$.  In other words, each sphere that disagrees contributes 1 to the sum.  Hayes and Moore \cite{Hayes} designed a modified Hamming metric that depends continuously on the difference between the two sphere positions.  So a sphere whose two positions are very close contributes a small fraction less than 1.  With this they improved the bound of the critical density from $\rho_c \ge 0.125$ to $\rho_c \ge 0.154483$ in the two dimensional setting.
 
 \subsection*{Event Chain Dynamics}
 
-In the \textit{Event Chain dynamics}, a sphere and direction are both chosen uniformly at random.  The sphere attempts to move in the picked direction a distance $\delta$.  If the sphere collides with anther sphere after only moving a distance $\epsilon < \delta$, then the sphere stops at the point of collision and the collided sphere attempts to move in the same picked direction for a distance $\delta - \epsilon$.  If the new moving sphere collides with another sphere, the process is repeated as many times as needed.
+In the \textit{Event Chain dynamics} \cite{Bernard}, a sphere and direction are both chosen uniformly at random.  The sphere attempts to move in the picked direction a distance $\delta$.  If the sphere collides with anther sphere after only moving a distance $\epsilon < \delta$, then the sphere stops at the point of collision and the collided sphere attempts to move in the same picked direction for a distance $\delta - \epsilon$.  If the new moving sphere collides with another sphere, the process is repeated as many times as needed.
 
-The hope is that Event Chain dynamics will still converge quickly at higher densities where the rejected move rate of Single-Sphere global-move dynamics is high.  The intuition is that Event Chain dynamics never rejects a move, the collision rate increases.  By empirical observations the Event Chain dynamics appears to have a short running time, but there are no theoretical guarantees; where as Single-Sphere Global-Move dynamics has theoretical guarantees but performs much slower at high densities.
+The hope is that Event Chain dynamics will still converge quickly at higher densities where the rejected move rate of Single-Sphere global-move dynamics is high.  The intuition is that Event Chain dynamics never rejects a move, the collision rate increases.  By empirical observations the Event Chain dynamics appears to have a short run-time, but there are no theoretical guarantees; where as Single-Sphere Global-Move dynamics has theoretical guarantees but performs much slower at high densities.
 
 \section*{Open Questions}
 
-Proving some rigorous lower bound for Event Chain dynamics is a major open question in the field.  The dynamics is being used to produce random configurations but without any proofs about its running time.  The only bearing for using the dynamics is because it appears to work well.  With some accurate guarantees, there would be validity in using this dynamics over another.
+Proving some rigorous lower bound for Event Chain dynamics is a major open problem in the field.  The dynamics is being used to produce random configurations but without any proofs about its running time.  The only bearing for using the dynamics is because it appears to work well.  With some accurate guarantees, there would be validity in using this dynamics over another.
 
-In a slightly different model, there is an alternative parameter of interest, the \textit{fugacity} $\lambda$, that controls the probability of a sphere entering or leaving the box. The number of spheres $N$ within the box does not remain constant, which means $\rho$ does not either.  An interesting question to ask is given some fixed $\lambda$ value, what would $\rho$ converge to?  If these two parameters have a strong relation, is there some dynamics involving $\lambda$ that would allow short running times at high densities?  The motivation for looking into this varied model is that problematic configurations may become easier to mix if one of the spheres has the probability to be removed; as well as the theoretical guarantees may be easier to analyze.
+In a slightly different model, there is an alternative parameter of interest, the \textit{fugacity} $\lambda$, that controls the probability of a sphere entering or leaving the box. The number of spheres $N$ within the box does not remain constant, which means $\rho$ does not either.  An interesting question to ask is given some fixed $\lambda$ value, what would $\rho$ converge to?  If these two parameters have a strong relation, is there some dynamics involving $\lambda$ that would allow short running times at high densities?  The motivation for looking into this varied model is that problematic configurations may become easier to mix if one of the spheres has the probability to be removed; also the theoretical guarantees may be easier to analyze.
 
 \begin{thebibliography}{9}
-
-%\bibitem{Bernard}
-%  Etienne Bernard, Werner Krauth, and David Wilson.
-%  \emph{Event-chain monte carlo algorithms for hard-sphere systems.}
-%  Physical Review E,
-%  80(5):056704, 2009.
 
 \bibitem{Mak}
   Chi Mak. 
@@ -68,6 +62,12 @@ In a slightly different model, there is an alternative parameter of interest, th
   The Journal of chemical physics,
   133:164507, 2010.
 
+\bibitem{Bubley}
+  Russ Bubley and Martin Dyer.
+  \emph{Path coupling: A technique for proving rapid mixing in Markov chains}.
+  Foundations of Computer Science, 1997. Proceedings., 38th Annual Symposium on. IEEE,
+  1997.
+
 \bibitem{Kannan}
   Ravi Kannan, Michael Mahoney, and Ravi Montenegro.
   \emph{Rapid mixing of several Markov chains for a hard-core model}.
@@ -79,6 +79,12 @@ In a slightly different model, there is an alternative parameter of interest, th
   \emph{Lower Bounds on the Critical Density in the Hard Disk Model via Optimized Metrics}.
   arXiv preprint,
   arXiv:1407.1930 (2014).
+
+\bibitem{Bernard}
+  Etienne Bernard, Werner Krauth, and David Wilson.
+  \emph{Event-chain monte carlo algorithms for hard-sphere systems.}
+  Physical Review E,
+  80(5):056704, 2009.
 
 \end{thebibliography}
 
