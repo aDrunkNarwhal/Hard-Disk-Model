@@ -129,7 +129,8 @@ if __name__ == '__main__':
           save_int = options.saveinterval
           picklename = options.filename
           
-          BOX = ssgm(num_spheres,rho=rho,pfile=picklename,p_steps=save_int)
+          BOX = ssgm(num_spheres, rho=rho,
+                    pfile=picklename, p_steps=save_int)
      
      else:
           BOX = load(open( load_name, "rb" ))
