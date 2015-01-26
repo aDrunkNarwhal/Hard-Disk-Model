@@ -120,8 +120,8 @@ if __name__ == '__main__':
      
      t = options.timesteps
      load_name = options.picklefile
-     display = options.display
-     quiet = options.quiet
+     show_display = options.display
+     not_quiet = options.quiet
      
      if not load_name:
           num_spheres = options.numspheres
@@ -134,14 +134,14 @@ if __name__ == '__main__':
      else:
           BOX = load(open( load_name, "rb" ))
      
-     BOX.display = quiet     
+     BOX.display = not_quiet     
      BOX.mix(t)
-          
-     if quiet:
+     
+     if not_quiet:
           
           print BOX
           
-          if display:
+          if show_display:
                import matplotlib.pyplot as plt
                from matplotlib.pyplot import Figure, subplot
 
