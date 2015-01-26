@@ -1,4 +1,4 @@
-# sphere.py
+# Sphere.py
 from math import pi
 
 class sphere:
