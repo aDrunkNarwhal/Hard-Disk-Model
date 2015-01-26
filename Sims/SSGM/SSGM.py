@@ -122,20 +122,21 @@ if __name__ == '__main__':
      load_name = options.picklefile
      show_display = options.display
      not_quiet = options.quiet
+     picklename = options.filename
+     save_int = options.saveinterval
      
      if not load_name:
           num_spheres = options.numspheres
           rho = options.rho
-          save_int = options.saveinterval
-          picklename = options.filename
           
-          BOX = ssgm(num_spheres, rho=rho,
-                    pfile=picklename, p_steps=save_int)
+          BOX = ssgm(num_spheres, rho=rho)
      
      else:
           BOX = load(open( load_name, "rb" ))
      
-     BOX.display = not_quiet     
+     BOX.pfile = picklename
+     BOX.p_steps = save_int
+     BOX.display = not_quiet    
      BOX.mix(t)
      
      if not_quiet:
