@@ -50,28 +50,67 @@ class ssgm:
      def __setitem__(self,i,s):
           self.spheres[i] = s
      
-     def is_valid_move(self,index,coords):
-          for i in range(len(self.spheres)):
-               if i != index:
-                    d = 0.0
-                    for ci in range(len(coords)):
-                         d += (coords[ci] - self.spheres[i].coords[ci]) ** 2
-                    if d < (2 * self.rad_spheres) ** 2:
-                         return False
-          return True
+     def is_valid_move(self,coords):
+          danger_zone = (2.0 * self.rad_spheres) ** 2.0
+          imax = len(self.spheres) - 1
+          imin = 0
+          while imax > imin:
+               imid = (imax + imin) / 2
+               
+               if self.spheres[imid] < coords:
+                    imin = imid + 1
+               else:
+                    imax = imid - 1
+                    
+          imid = imin
           
+          coord_0 = coords[0]
+          #check up list
+          curr = imid
+          coord_c = coord_0
+          while coord_c - coord_0 < 2.0 * self.rad_spheres:
+               d0 = self.spheres[curr].calc_dist_sq(coords)
+               if d0 < danger_zone:
+                    return False, imid
+               curr += 1
+               if not curr < len(self.spheres):
+                    break
+               coord_c = self.spheres[curr].coords[0]
+          #check down list
+          curr = imid
+          coord_c = coord_0
+          while coord_0 - coord_c < 2.0 * self.rad_spheres:
+               d0 = self.spheres[curr].calc_dist_sq(coords)
+               if d0 < danger_zone:
+                    return False, imid
+               curr -= 1
+               if not curr >= 0:
+                    break
+               coord_c = self.spheres[curr].coords[0]
+               if coord_c == -1:
+                    break
+          if self.spheres[imid] < coords:
+               return True, imid + 1
+          else:
+               return True, imid
+                    
      def mix(self,t=1000):
           t0 = 0
           box_buffer = 1 - 2 * self.rad_spheres
           while t0 < t:
                i = randint(0,len(self)-1)
+               temp = self.spheres[i]
+               del(self.spheres[i])
                r_coords = []
                for r in range(self.num_dims):
                     r_coords.append(box_buffer * random() + self.rad_spheres)
                
-               if self.is_valid_move(i,r_coords):
-                    self.spheres[i].coords = r_coords
-               
+               valid, index = self.is_valid_move(r_coords)
+               if valid:
+                    self.spheres.insert(index,sphere(self.rad_spheres,r_coords,temp.label))
+               else:
+                    self.spheres.insert(i,temp)
+               del(temp)
                self.timesteps += 1
                t0 += 1
                
@@ -146,7 +185,7 @@ if __name__ == '__main__':
           if show_display:
                import matplotlib.pyplot as plt
                from matplotlib.pyplot import Figure, subplot
-
+               
                fig=plt.figure(1)
                plt.axis([0,1,0,1])
                ax=fig.add_subplot(1,1,1)
