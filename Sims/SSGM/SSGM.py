@@ -36,9 +36,10 @@ class ssgm:
           self.rho = self.num_spheres * self.spheres[0].vol()
      
      def pack_disks(self):
-          edge_buff = self.rad_spheres
-          x_inc = (3.0**(1.0/2.0)) * (self.rad_spheres)
-          y_inc = 2.0 * self.rad_spheres
+          mini_buff = 0.0001
+          edge_buff = self.rad_spheres + mini_buff
+          x_inc = (3.0**(1.0/2.0)) * (self.rad_spheres) + mini_buff
+          y_inc = 2.0 * self.rad_spheres + mini_buff
           
           index = len(self.spheres) - 1
           x = 1.0 - edge_buff
@@ -255,4 +256,4 @@ if __name__ == '__main__':
                for s in BOX.spheres:
                     ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
                
-               plt.show()
+               plt.show(block=True)
