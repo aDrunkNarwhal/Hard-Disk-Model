@@ -21,7 +21,9 @@ class ssgm:
           self.timesteps = 0
           self.pfile = pfile
           self.p_steps = int(p_steps)
+          self.not_quiet = True
           self.display = True
+          self.d_steps = 1000
           
           for i in range(self.num_spheres):
                self.spheres.append(sphere(self.rad_spheres,[-1.0,-1.0],str(i)))
@@ -95,6 +97,22 @@ class ssgm:
                return True, imid
                     
      def mix(self,t=1000):
+          if self.display:
+               import matplotlib.pyplot as plt
+               from matplotlib.pyplot import Figure, subplot
+               fig=plt.figure(1)
+               plt.axis([0,1,0,1])
+               ax=fig.add_subplot(1,1,1)
+               ax.set_aspect('equal')
+               
+               CIRCLES = []
+               
+               for s in self.spheres:
+                    temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
+                    CIRCLES.append(temp_c)
+                    ax.add_patch(temp_c)
+               
+               plt.show(block=False)
           t0 = 0
           box_buffer = 1 - 2 * self.rad_spheres
           while t0 < t:
@@ -108,15 +126,22 @@ class ssgm:
                valid, index = self.is_valid_move(r_coords)
                if valid:
                     self.spheres.insert(index,sphere(self.rad_spheres,r_coords,temp.label))
+                    if self.display:
+                         circ_index = int(self.spheres[index].label)
+                         CIRCLES[circ_index].center = r_coords
                else:
                     self.spheres.insert(i,temp)
                del(temp)
+               
                self.timesteps += 1
                t0 += 1
                
+               if self.display and self.timesteps % self.d_steps == 0:
+                   plt.draw()
+                    
                if self.pfile and self.timesteps % self.p_steps == 0:
                     dump(self, open( self.pfile, "wb" ))
-                    if self.display:
+                    if self.not_quiet:
                          print "SAVED at timestep:",self.timesteps
 
 if __name__ == '__main__':
@@ -146,14 +171,18 @@ if __name__ == '__main__':
      parser.add_option("-f", "--filename", metavar='FILE',
                action="store", type="string", default='saved.p',
                help="the name of the picklefile to be saved, default is 'saved.p'")
+                 
+     parser.add_option("-q", "--quiet",
+                  action="store_false", default=True,
+                  help="turns OFF all display")
                
      parser.add_option("-d", "--display",
                   action="store_true", default=False,
                   help="turns ON graphics")
-                  
-     parser.add_option("-q", "--quiet",
-                  action="store_false", default=True,
-                  help="turns OFF all display")
+                   
+     parser.add_option("--d_step", metavar='VAR',
+                  action="store", type="int", default=500,
+                  help="change when display window updates, default is 500")
                   
      (options, args) = parser.parse_args()
      
@@ -163,6 +192,7 @@ if __name__ == '__main__':
      not_quiet = options.quiet
      picklename = options.filename
      save_int = options.saveinterval
+     disp_int = options.d_step
      
      if not load_name:
           num_spheres = options.numspheres
@@ -175,7 +205,9 @@ if __name__ == '__main__':
      
      BOX.pfile = picklename
      BOX.p_steps = save_int
-     BOX.display = not_quiet    
+     BOX.not_quiet = not_quiet
+     BOX.display = show_display
+     BOX.d_steps = disp_int  
      BOX.mix(t)
      
      if not_quiet:
