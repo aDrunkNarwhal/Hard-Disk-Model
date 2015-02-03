@@ -1,5 +1,7 @@
 # SSGM.py
 
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import Figure, subplot
 from optparse import OptionParser
 from pickle import load,dump
 from Sphere import sphere
@@ -9,7 +11,7 @@ from sys import argv
 
 class ssgm:
      
-     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
+     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000,pack=False):
           self.num_spheres = n
           if rho:
                self.rad_spheres = (float(rho) / (float(n) * pi)) ** (1.0/2.0)
@@ -28,7 +30,34 @@ class ssgm:
           for i in range(self.num_spheres):
                self.spheres.append(sphere(self.rad_spheres,[-1.0,-1.0],str(i)))
           
+          if pack:
+               self.pack_disks()
+          
           self.rho = self.num_spheres * self.spheres[0].vol()
+     
+     def pack_disks(self):
+          edge_buff = self.rad_spheres
+          x_inc = (3.0**(1.0/2.0)) * (self.rad_spheres)
+          y_inc = 2.0 * self.rad_spheres
+          
+          index = len(self.spheres) - 1
+          x = 1.0 - edge_buff
+          y = 1.0 - edge_buff
+          y_offset = False
+          while index >= 0:
+               if y < edge_buff:
+                    x -= x_inc
+                    y = 1.0 - y_inc
+                    if y_offset:
+                         y += self.rad_spheres
+                         y_offset = False
+                    else:
+                         y_offset = True
+               if x < edge_buff:
+                    break
+               self.spheres[index].coords = [x,y]
+               y -= y_inc
+               index -= 1
      
      def __repr__(self):
           x  = "Num Spheres:    " + str(self.num_spheres) + '\n'
@@ -97,9 +126,7 @@ class ssgm:
                return True, imid
                     
      def mix(self,t=1000):
-          if self.display:
-               import matplotlib.pyplot as plt
-               from matplotlib.pyplot import Figure, subplot
+          if self.display and self.not_quiet:
                fig=plt.figure(1)
                plt.axis([0,1,0,1])
                ax=fig.add_subplot(1,1,1)
@@ -136,7 +163,7 @@ class ssgm:
                self.timesteps += 1
                t0 += 1
                
-               if self.display and self.timesteps % self.d_steps == 0:
+               if self.display and self.not_quiet and self.timesteps % self.d_steps == 0:
                    plt.draw()
                     
                if self.pfile and self.timesteps % self.p_steps == 0:
@@ -155,6 +182,10 @@ if __name__ == '__main__':
      parser.add_option("-r", "--rho", metavar='VAL',
                action="store", type="float", default=0.7,
                help="modify the the density, default is 0.7")
+     
+     parser.add_option("--packed",
+               action="store_true", default=False,
+               help="Will tightly pack the disks for starting configuration, default is false")
                
      parser.add_option("-t", "--timesteps", metavar='VAL',
                action="store", type="int", default=1000,
@@ -193,12 +224,13 @@ if __name__ == '__main__':
      picklename = options.filename
      save_int = options.saveinterval
      disp_int = options.d_step
+     pack = options.packed
      
      if not load_name:
           num_spheres = options.numspheres
           rho = options.rho
           
-          BOX = ssgm(num_spheres, rho=rho)
+          BOX = ssgm(num_spheres, rho=rho, pack=pack)
      
      else:
           BOX = load(open( load_name, "rb" ))
@@ -215,9 +247,6 @@ if __name__ == '__main__':
           print BOX
           
           if show_display:
-               import matplotlib.pyplot as plt
-               from matplotlib.pyplot import Figure, subplot
-               
                fig=plt.figure(1)
                plt.axis([0,1,0,1])
                ax=fig.add_subplot(1,1,1)
