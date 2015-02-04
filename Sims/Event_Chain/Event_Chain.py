@@ -101,6 +101,8 @@ class ssgm:
                
                line = self.gen_line_eq(self.spheres[i],angle)
                
+               #UPDATE CIRCLES AFTER A MOVE
+               
                self.timesteps += 1
                t0 += 1
                
