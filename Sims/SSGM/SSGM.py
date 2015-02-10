@@ -10,14 +10,17 @@ from math import pi
 
 class ssgm:
      
-     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000,pack=False):
+     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
           self.num_spheres = n
           if rho:
-               self.rad_spheres = (float(rho) / (float(n) * pi)) ** (1.0/2.0)
+               self.rad_spheres = (float(rho) / (float(n) * pi)) ** (0.5)
           else:
                self.rad_spheres = r
                
           self.num_dims = 2
+          self.num_boxes = int(1.0 / (2 * self.rad_spheres))
+          if 1.0 % (2 * self.rad_spheres) != 0:
+               self.num_boxes += 1
           self.spheres = []
           self.timesteps = 0
           self.pfile = pfile
@@ -26,38 +29,20 @@ class ssgm:
           self.display = True
           self.d_steps = 1000
           
-          for i in range(self.num_spheres):
-               self.spheres.append(sphere(self.rad_spheres,[-1.0,-1.0],str(i)))
-          
-          if pack:
-               self.pack_disks()
-          
-          self.rho = self.num_spheres * self.spheres[0].vol()
-     
-     def pack_disks(self):
-          mini_buff = 0.0001
-          edge_buff = self.rad_spheres + mini_buff
-          x_inc = (3.0**(1.0/2.0)) * (self.rad_spheres) + mini_buff
-          y_inc = 2.0 * self.rad_spheres + mini_buff
-          
-          index = len(self.spheres) - 1
-          x = 1.0 - edge_buff
-          y = 1.0 - edge_buff
-          y_offset = False
-          while index >= 0:
-               if y < edge_buff:
-                    x -= x_inc
-                    y = 1.0 - y_inc
-                    if y_offset:
-                         y += self.rad_spheres
-                         y_offset = False
+          i = 0
+          x_i = 0.0
+          for x in range(self.num_boxes):
+               self.spheres.append([])
+               x_i = (2.0 * x + 1) * self.rad_spheres
+               y_i = self.rad_spheres
+               for y in range(self.num_boxes):
+                    if y_i < 1 - self.rad_spheres and x_i < 1 - self.rad_spheres and i < self.num_spheres:
+                         self.spheres[x].append([sphere(self.rad_spheres,[x_i,y_i],str(i))])
+                         i += 1
                     else:
-                         y_offset = True
-               if x < edge_buff:
-                    break
-               self.spheres[index].coords = [x,y]
-               y -= y_inc
-               index -= 1
+                         self.spheres[x].append([])
+                    y_i += 2 * self.rad_spheres
+          self.rho = self.num_spheres * self.spheres[0][0][0].vol()
      
      def __repr__(self):
           x  = "Num Spheres:    " + str(self.num_spheres) + '\n'
@@ -65,65 +50,43 @@ class ssgm:
           x += "Num Dimensions: " + str(self.num_dims) + '\n'
           x += "Rho:            " + str(self.rho) + '\n'
           x += "Timesteps:      " + str(self.timesteps) + '\n'
-          count = 0
-          for s in self.spheres:
-               if s.coords == [-1.0,-1.0]:
-                    count += 1
-          x += "Spheres not in: " + str(count)
+          
           return x
      
+     def __iter__(self):
+          for x in range(self.num_boxes):
+               for y in range(self.num_boxes):
+                    for z in range(len(self.spheres[x][y])):
+                         yield self.spheres[x][y][z]
+     
      def __len__(self):
-          return len(self.spheres)
+          return self.num_spheres
      
-     def __getitem__(self,i):
-          return self.spheres[i]
+     #def __getitem__(self,i):
+     #     return self.spheres[i]
      
-     def __setitem__(self,i,s):
-          self.spheres[i] = s
+     #def __setitem__(self,i,s):
+     #     self.spheres[i] = s
      
      def is_valid_move(self,coords):
           danger_zone = (2.0 * self.rad_spheres) ** 2.0
-          imax = len(self.spheres) - 1
-          imin = 0
-          while imax > imin:
-               imid = (imax + imin) / 2
-               
-               if self.spheres[imid] < coords:
-                    imin = imid + 1
-               else:
-                    imax = imid - 1
-                    
-          imid = imin
+          l = [-1,0,1]
+          x_0 = int(coords[0] / (2 * self.rad_spheres))
+          y_0 = int(coords[1] / (2 * self.rad_spheres))
+                              
+          for i in l:
+               x_t = x_0 + i
+               if x_t >= 0 and x_t < self.num_boxes:
+                    for j in l:
+                         y_t = y_0 + j
+                         if y_t >= 0 and y_t < self.num_boxes:
+                              s_list = self.spheres[x_t][y_t]
+                              for s in s_list:
+                                   d = s.calc_dist_sq(coords)
+                                   if d < danger_zone:
+                                        return False, None, None
+          return True, x_0, y_0
           
-          coord_0 = coords[0]
-          #check up list
-          curr = imid
-          coord_c = coord_0
-          while self.spheres and coord_c - coord_0 < 2.0 * self.rad_spheres:
-               d0 = self.spheres[curr].calc_dist_sq(coords)
-               if d0 < danger_zone:
-                    return False, imid
-               curr += 1
-               if not curr < len(self.spheres):
-                    break
-               coord_c = self.spheres[curr].coords[0]
-          #check down list
-          curr = imid
-          coord_c = coord_0
-          while self.spheres and coord_0 - coord_c < 2.0 * self.rad_spheres:
-               d0 = self.spheres[curr].calc_dist_sq(coords)
-               if d0 < danger_zone:
-                    return False, imid
-               curr -= 1
-               if not curr >= 0:
-                    break
-               coord_c = self.spheres[curr].coords[0]
-               if coord_c == -1:
-                    break
-          if self.spheres and self.spheres[imid] < coords:
-               return True, imid + 1
-          else:
-               return True, imid
                     
      def mix(self,t=1000):
           if self.display and self.not_quiet:
@@ -132,33 +95,44 @@ class ssgm:
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               CIRCLES = []
+               CIRCLES = [None] * self.num_spheres
                
-               for s in self.spheres:
-                    temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
-                    CIRCLES.append(temp_c)
-                    ax.add_patch(temp_c)
+               for s in self:
+                    if s:
+                         temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
+                         CIRCLES[int(s.label)] = temp_c
+                         ax.add_patch(temp_c)
                
                plt.show(block=False)
           t0 = 0
           box_buffer = 1 - 2 * self.rad_spheres
           while t0 < t:
-               i = randint(0,len(self)-1)
-               temp = self.spheres[i]
-               del(self.spheres[i])
+               x_i = randint(0,self.num_boxes-1)
+               y_i = randint(0,self.num_boxes-1)
+               while not self.spheres[x_i][y_i]:
+                    x_i = randint(0,self.num_boxes-1)
+                    y_i = randint(0,self.num_boxes-1)
+               
+               z_i = randint(0,len(self.spheres[x_i][y_i])-1)
+               
+               temp_s = self.spheres[x_i][y_i][z_i]
+               del(self.spheres[x_i][y_i][z_i])
+               
                r_coords = []
                for r in range(self.num_dims):
                     r_coords.append(box_buffer * random() + self.rad_spheres)
                
-               valid, index = self.is_valid_move(r_coords)
+               valid, x_new, y_new = self.is_valid_move(r_coords)
+               
                if valid:
-                    self.spheres.insert(index,sphere(self.rad_spheres,r_coords,temp.label))
+                    self.spheres[x_new][y_new].append(sphere(self.rad_spheres,r_coords,temp_s.label))
                     if self.display:
-                         circ_index = int(self.spheres[index].label)
+                         circ_index = int(temp_s.label)
                          CIRCLES[circ_index].center = r_coords
                else:
-                    self.spheres.insert(i,temp)
-               del(temp)
+                    self.spheres[x_i][y_i].append(sphere(self.rad_spheres,temp_s.coords,temp_s.label))
+               
+               del(temp_s)                    
                
                self.timesteps += 1
                t0 += 1
@@ -182,10 +156,6 @@ if __name__ == '__main__':
      parser.add_option("-r", "--rho", metavar='VAL',
                action="store", type="float", default=0.7,
                help="modify the the density, default is 0.7")
-     
-     parser.add_option("--packed",
-               action="store_true", default=False,
-               help="Will tightly pack the disks for starting configuration, default is false")
                
      parser.add_option("-t", "--timesteps", metavar='VAL',
                action="store", type="int", default=1000,
@@ -224,13 +194,12 @@ if __name__ == '__main__':
      picklename = options.filename
      save_int = options.saveinterval
      disp_int = options.d_step
-     pack = options.packed
      
      if not load_name:
           num_spheres = options.numspheres
           rho = options.rho
           
-          BOX = ssgm(num_spheres, rho=rho, pack=pack)
+          BOX = ssgm(num_spheres, rho=rho)
      
      else:
           BOX = load(open( load_name, "rb" ))
@@ -252,7 +221,8 @@ if __name__ == '__main__':
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               for s in BOX.spheres:
-                    ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
+               for s in BOX:
+                    if s:
+                         ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
                
                plt.show(block=True)
