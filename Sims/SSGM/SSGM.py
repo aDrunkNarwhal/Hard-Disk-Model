@@ -42,6 +42,10 @@ class ssgm:
                     else:
                          self.spheres[x].append([])
                     y_i += 2 * self.rad_spheres
+                    
+          if i < self.num_spheres:
+               print "\nWARNING: Not all disks are in the box, only " + str(i) + " disks\n"
+          
           self.rho = self.num_spheres * self.spheres[0][0][0].vol()
      
      def __repr__(self):
