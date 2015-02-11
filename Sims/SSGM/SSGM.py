@@ -18,8 +18,9 @@ class ssgm:
                self.rad_spheres = r
                
           self.num_dims = 2
-          self.num_boxes = int(1.0 / (2 * self.rad_spheres))
-          if 1.0 % (2 * self.rad_spheres) != 0:
+          self.box_width = (2 * self.rad_spheres) + 0.001
+          self.num_boxes = int(1.0 / self.box_width)
+          if 1.0 % (self.box_width) != 0:
                self.num_boxes += 1
           self.spheres = []
           self.timesteps = 0
@@ -33,15 +34,15 @@ class ssgm:
           x_i = 0.0
           for x in range(self.num_boxes):
                self.spheres.append([])
-               x_i = (2.0 * x + 1) * self.rad_spheres
-               y_i = self.rad_spheres
+               x_i = (x + 0.5) * self.box_width
+               y_i = 0.5 * self.box_width
                for y in range(self.num_boxes):
                     if y_i < 1 - self.rad_spheres and x_i < 1 - self.rad_spheres and i < self.num_spheres:
                          self.spheres[x].append([sphere(self.rad_spheres,[x_i,y_i],str(i))])
                          i += 1
                     else:
                          self.spheres[x].append([])
-                    y_i += 2 * self.rad_spheres
+                    y_i += self.box_width
                     
           if i < self.num_spheres:
                print "\nWARNING: Not all disks are in the box, only " + str(i) + " disks\n"
@@ -75,8 +76,8 @@ class ssgm:
      def is_valid_move(self,coords):
           danger_zone = (2.0 * self.rad_spheres) ** 2.0
           l = [-1,0,1]
-          x_0 = int(coords[0] / (2 * self.rad_spheres))
-          y_0 = int(coords[1] / (2 * self.rad_spheres))
+          x_0 = int(coords[0] / (self.box_width))
+          y_0 = int(coords[1] / (self.box_width))
                               
           for i in l:
                x_t = x_0 + i
