@@ -43,11 +43,11 @@ class sphere:
                d += (other[c] - self.coords[c]) ** 2.0
           return d
           
-     def calc_dist_from_line_sq(self,line):
-          numerator = abs(line[0] * self.coords[0] + self.coords[1] + line[1]) ** 2.0
-          denomerator = line[0] ** 2.0 + 1.0
+     def calc_dist_from_line_sq(self,base,coords):               
+          b_sq = base ** 2.0
+          d_sq = self.calc_dist_sq(coords)
           
-          return numerator / denomerator
+          return d_sq - b_sq
      
      def __lt__(self,coords):
           if len(coords) != len(self.coords):

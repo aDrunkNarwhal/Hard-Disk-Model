@@ -1,21 +1,27 @@
+# Event_Chain.py
+
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import Figure, subplot
 from optparse import OptionParser
 from pickle import load,dump
 from Sphere import sphere
 from random import random,randint
-from math import pi
+from math import pi,sin,cos
 
-class ssgm:
+class event_chain:
      
      def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
           self.num_spheres = n
           if rho:
-               self.rad_spheres = (float(rho) / (float(n) * pi)) ** (1.0/2.0)
+               self.rad_spheres = (float(rho) / (float(n) * pi)) ** (0.5)
           else:
                self.rad_spheres = r
                
           self.num_dims = 2
+          self.box_width = (2 * self.rad_spheres) + 0.001
+          self.num_boxes = int(1.0 / self.box_width)
+          if 1.0 % (self.box_width) != 0:
+               self.num_boxes += 1
           self.spheres = []
           self.timesteps = 0
           self.pfile = pfile
@@ -24,37 +30,24 @@ class ssgm:
           self.display = True
           self.d_steps = 1000
           
-          for i in range(self.num_spheres):
-               self.spheres.append(sphere(self.rad_spheres,[-1.0,-1.0],str(i)))
-          
-          self.pack_disks()
-          
-          self.rho = self.num_spheres * self.spheres[0].vol()
-     
-     def pack_disks(self):
-          mini_buff = 0.0001
-          edge_buff = self.rad_spheres + mini_buff
-          x_inc = (3.0**(1.0/2.0)) * (self.rad_spheres) + mini_buff
-          y_inc = 2.0 * self.rad_spheres + mini_buff
-          
-          index = len(self.spheres) - 1
-          x = 1.0 - edge_buff
-          y = 1.0 - edge_buff
-          y_offset = False
-          while index >= 0:
-               if y < edge_buff:
-                    x -= x_inc
-                    y = 1.0 - y_inc
-                    if y_offset:
-                         y += self.rad_spheres
-                         y_offset = False
+          i = 0
+          x_i = 0.0
+          for x in range(self.num_boxes):
+               self.spheres.append([])
+               x_i = (x + 0.5) * self.box_width
+               y_i = 0.5 * self.box_width
+               for y in range(self.num_boxes):
+                    if y_i < 1 - self.rad_spheres and x_i < 1 - self.rad_spheres and i < self.num_spheres:
+                         self.spheres[x].append([sphere(self.rad_spheres,[x_i,y_i],str(i))])
+                         i += 1
                     else:
-                         y_offset = True
-               if x < edge_buff:
-                    break
-               self.spheres[index].coords = [x,y]
-               y -= y_inc
-               index -= 1
+                         self.spheres[x].append([])
+                    y_i += self.box_width
+                    
+          if i < self.num_spheres:
+               print "\nWARNING: Not all disks are in the box, only " + str(i) + " disks\n"
+          
+          self.rho = self.num_spheres * self.spheres[0][0][0].vol()
      
      def __repr__(self):
           x  = "Num Spheres:    " + str(self.num_spheres) + '\n'
@@ -62,22 +55,18 @@ class ssgm:
           x += "Num Dimensions: " + str(self.num_dims) + '\n'
           x += "Rho:            " + str(self.rho) + '\n'
           x += "Timesteps:      " + str(self.timesteps) + '\n'
-          count = 0
-          for s in self.spheres:
-               if s.coords == [-1.0,-1.0]:
-                    count += 1
-          x += "Spheres not in: " + str(count)
+          
           return x
      
+     def __iter__(self):
+          for x in range(self.num_boxes):
+               for y in range(self.num_boxes):
+                    for z in range(len(self.spheres[x][y])):
+                         yield self.spheres[x][y][z]
+     
      def __len__(self):
-          return len(self.spheres)
-     
-     def __getitem__(self,i):
-          return self.spheres[i]
-     
-     def __setitem__(self,i,s):
-          self.spheres[i] = s
-                         
+          return self.num_spheres
+          
      def mix(self,t=1000):
           if self.display and self.not_quiet:
                fig=plt.figure(1)
@@ -85,23 +74,35 @@ class ssgm:
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               CIRCLES = []
+               CIRCLES = [None] * self.num_spheres
                
-               for s in self.spheres:
-                    temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
-                    CIRCLES.append(temp_c)
-                    ax.add_patch(temp_c)
+               for s in self:
+                    if s:
+                         temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
+                         CIRCLES[int(s.label)] = temp_c
+                         ax.add_patch(temp_c)
                
                plt.show(block=False)
           t0 = 0
           box_buffer = 1 - 2 * self.rad_spheres
           while t0 < t:
-               i = randint(0,len(self)-1)
-               angle = 2 * pi * random()
+               x_i = randint(0,self.num_boxes-1)
+               y_i = randint(0,self.num_boxes-1)
+               while not self.spheres[x_i][y_i]:
+                    x_i = randint(0,self.num_boxes-1)
+                    y_i = randint(0,self.num_boxes-1)
                
-               line = self.gen_line_eq(self.spheres[i],angle)
+               z_i = randint(0,len(self.spheres[x_i][y_i])-1)
                
-               #UPDATE CIRCLES AFTER A MOVE
+               temp_s = self.spheres[x_i][y_i][z_i]
+               del(self.spheres[x_i][y_i][z_i])
+               
+               angle = random() * 2 * pi
+               slope = (sin(angle),cos(angle))
+               
+               # SLIDE THE SPHERE
+               
+               del(temp_s)                    
                
                self.timesteps += 1
                t0 += 1
@@ -113,12 +114,6 @@ class ssgm:
                     dump(self, open( self.pfile, "wb" ))
                     if self.not_quiet:
                          print "SAVED at timestep:",self.timesteps
-
-
-     def gen_line_eq(self,point,rads):
-          slope = sin(rads) / cos(rads)
-          y_int = point[1] - slope * point[0]
-          return slope, y_int
 
 if __name__ == '__main__':
 
@@ -174,7 +169,7 @@ if __name__ == '__main__':
           num_spheres = options.numspheres
           rho = options.rho
           
-          BOX = ssgm(num_spheres, rho=rho)
+          BOX = enevt_chain(num_spheres, rho=rho)
      
      else:
           BOX = load(open( load_name, "rb" ))
@@ -196,7 +191,8 @@ if __name__ == '__main__':
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               for s in BOX.spheres:
-                    ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
+               for s in BOX:
+                    if s:
+                         ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
                
                plt.show(block=True)
