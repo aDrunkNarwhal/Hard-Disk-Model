@@ -10,8 +10,9 @@ from math import pi,sin,cos
 
 class event_chain:
      
-     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
+     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000,slide_d=0.5):
           self.num_spheres = n
+          self.slide_dist = slide_d
           if rho:
                self.rad_spheres = (float(rho) / (float(n) * pi)) ** (0.5)
           else:
@@ -66,7 +67,16 @@ class event_chain:
      
      def __len__(self):
           return self.num_spheres
-          
+     
+     def get_boxes_to_check(self,start_box,coords,slope):
+          box_list = []
+          i = 0
+          curr_box = start_box
+          while self.box_width * i < self.slide_dist * slope[1]:
+               # Add surrounding boxes, check sides
+               # Need to count for bouncing off walls
+               i += 1
+     
      def mix(self,t=1000):
           if self.display and self.not_quiet:
                fig=plt.figure(1)
@@ -101,6 +111,10 @@ class event_chain:
                slope = (sin(angle),cos(angle))
                
                # SLIDE THE SPHERE
+               delta = 0.0
+               while delta < self.slide_dist:
+                    box_list = self.get_boxes_to_check((x_i,y_i),temp_s.coords,slope)
+                    delta += 0.1
                
                del(temp_s)                    
                
@@ -126,7 +140,11 @@ if __name__ == '__main__':
      parser.add_option("-r", "--rho", metavar='VAL',
                action="store", type="float", default=0.7,
                help="modify the the density, default is 0.7")
-               
+     
+     parser.add_option("--slide", metavar='VAL',
+               action="store", type="float", default=0.5,
+               help="modify the distance the disks slide per turn, default is 0.5")
+     
      parser.add_option("-t", "--timesteps", metavar='VAL',
                action="store", type="int", default=1000,
                help="change the number of timesteps it will mix for, default is 1,000")
@@ -151,7 +169,7 @@ if __name__ == '__main__':
                   action="store_true", default=False,
                   help="turns ON graphics")
                    
-     parser.add_option("--d_step", metavar='VAR',
+     parser.add_option("--d_step", metavar='VAL',
                   action="store", type="int", default=500,
                   help="change when display window updates, default is 500")
                   
@@ -164,6 +182,7 @@ if __name__ == '__main__':
      picklename = options.filename
      save_int = options.saveinterval
      disp_int = options.d_step
+     slide_dist = options.slide
      
      if not load_name:
           num_spheres = options.numspheres
@@ -174,11 +193,13 @@ if __name__ == '__main__':
      else:
           BOX = load(open( load_name, "rb" ))
      
+     BOX.slide_dist = slide_dist
      BOX.pfile = picklename
      BOX.p_steps = save_int
      BOX.not_quiet = not_quiet
      BOX.display = show_display
-     BOX.d_steps = disp_int  
+     BOX.d_steps = disp_int
+     
      BOX.mix(t)
      
      if not_quiet:
