@@ -61,6 +61,7 @@ for iter in xrange(1000000):
          Current_position += distance_to_next_event
          Zero_distance_to_go -= distance_to_next_event
          L.append((Current_position,0.0))
+
 pylab.hist(data,bins=40,normed=True,alpha=0.5,cumulative=True)
 pylab.title("Event chain for four hard disks, l = "+str(ltilde))
 pylab.xlabel("Periodic pair distance $r_{ij}$")

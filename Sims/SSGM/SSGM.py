@@ -75,21 +75,30 @@ class ssgm:
      
      def is_valid_move(self,coords):
           danger_zone = (2.0 * self.rad_spheres) ** 2.0
-          l = [-1,0,1]
           x_0 = int(coords[0] / (self.box_width))
           y_0 = int(coords[1] / (self.box_width))
-                              
-          for i in l:
-               x_t = x_0 + i
-               if x_t >= 0 and x_t < self.num_boxes:
-                    for j in l:
-                         y_t = y_0 + j
-                         if y_t >= 0 and y_t < self.num_boxes:
-                              s_list = self.spheres[x_t][y_t]
-                              for s in s_list:
-                                   d = s.calc_dist_sq(coords)
-                                   if d < danger_zone:
-                                        return False, None, None
+          x_l = [-1,0,1]
+          y_l = [-1,0,1]
+          
+          if x_0 == self.num_boxes - 2:
+               x_l.append(2)
+          if x_0 == 0:
+               x_l.append(-2)
+          if y_0 == self.num_boxes - 2:
+               y_l.append(2)
+          if y_0 == 0:
+               y_l.append(-2)
+          
+          for i in x_l:
+               x_t = (x_0 + i) % self.num_boxes
+               for j in y_l:
+                    y_t = (y_0 + j) % self.num_boxes
+                    s_list = self.spheres[x_t][y_t]
+                    for s in s_list:
+                         d = s.calc_dist_sq(coords)
+                         if d < danger_zone:
+                              return False, None, None
+          
           return True, x_0, y_0
           
                     
@@ -100,17 +109,20 @@ class ssgm:
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               CIRCLES = [None] * self.num_spheres
-               
+               CIRCLES = [None] * self.num_spheres * 9
+               L = (-1,0,1)
                for s in self:
-                    if s:
-                         temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
-                         CIRCLES[int(s.label)] = temp_c
-                         ax.add_patch(temp_c)
+                    i = 0
+                    for x in L:
+                         for y in L:
+                              temp_c = plt.Circle([s.coords[0] + x,s.coords[1] + y], radius=s.radius, color='g', fill=True)
+                              CIRCLES[int(s.label) * 9 + i] = temp_c
+                              ax.add_patch(temp_c)
+                              i += 1
                
                plt.show(block=False)
           t0 = 0
-          box_buffer = 1 - 2 * self.rad_spheres
+          box_buffer = 1 #- 2 * self.rad_spheres
           while t0 < t:
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
@@ -125,7 +137,7 @@ class ssgm:
                
                r_coords = []
                for r in range(self.num_dims):
-                    r_coords.append(box_buffer * random() + self.rad_spheres)
+                    r_coords.append(box_buffer * random()) #+ self.rad_spheres)
                
                valid, x_new, y_new = self.is_valid_move(r_coords)
                
@@ -133,7 +145,11 @@ class ssgm:
                     self.spheres[x_new][y_new].append(sphere(self.rad_spheres,r_coords,temp_s.label))
                     if self.display:
                          circ_index = int(temp_s.label)
-                         CIRCLES[circ_index].center = r_coords
+                         i = 0
+                         for x in L:
+                              for y in L:
+                                   CIRCLES[circ_index * 9 + i].center = [r_coords[0] + x, r_coords[1] + y]
+                                   i += 1
                else:
                     self.spheres[x_i][y_i].append(sphere(self.rad_spheres,temp_s.coords,temp_s.label))
                
@@ -221,13 +237,16 @@ if __name__ == '__main__':
           print BOX
           
           if show_display:
+               """
                fig=plt.figure(1)
                plt.axis([0,1,0,1])
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
                for s in BOX:
-                    if s:
-                         ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
-               
+                    L = [-1,0,1]
+                    for x in L:
+                         for y in L:
+                              ax.add_patch(plt.Circle((s.coords[0] + x,s.coords[1] + y), radius=s.radius, color='g', fill=True))
+               """
                plt.show(block=True)

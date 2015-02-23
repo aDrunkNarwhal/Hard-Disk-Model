@@ -37,11 +37,15 @@ class sphere:
      def calc_dist_sq(self,other):
           if len(other) != len(self.coords):
                raise Exception("Dimension mismatch")
-               
-          d = 0.0
-          for c in range(len(other)):
-               d += (other[c] - self.coords[c]) ** 2.0
-          return d
+          
+          L = (-1,0,1)
+          d_min = 10000.0
+          for x in L:
+               for y in L:
+                    d = (other[0] + x - self.coords[0]) ** 2.0 + (other[1] + y - self.coords[1]) ** 2.0
+                    if d < d_min:
+                         d_min = d
+          return d_min
      
      def __lt__(self,coords):
           if len(coords) != len(self.coords):
