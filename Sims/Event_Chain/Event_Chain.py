@@ -84,10 +84,10 @@ class event_chain:
           while self.box_width * i <= self.slide_dist * slope[1]:
                i += 1
                next_box = (curr_box[0] + x_dir,
-                           (line[0] * self.box_width * (curr_box[0] + x_dir) + line[1]) % self.box_width)
+                           (line['slope'] * self.box_width * (curr_box[0] + x_dir) + line['y_int']) % self.box_width)
                next_box = tuple([x % self.num_boxes for x in next_box])
                
-               one_more = False
+               last_time = False
                inc_y = curr_box[1]
                while True:
                     if inc_y == next_box[1]:
@@ -107,8 +107,8 @@ class event_chain:
      
      def slide_sphere(self,s,slope,box):
      	
-     	line = (slope[0]/slope[1],
-     	        s.coords[1] - slope[0]*s.coords[0]/slope[1])
+     	line = {'slope':slope[0]/slope[1],
+     	        'y_int':s.coords[1] - slope[0]*s.coords[0]/slope[1]}
      	box_list = self.find_boxes_to_check(s,slope,line,box)
      	
      	for b in box_list:
