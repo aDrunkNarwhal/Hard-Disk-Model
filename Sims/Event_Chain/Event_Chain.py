@@ -1,4 +1,4 @@
-# SSGM.py
+# Event_Chain.py
 
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import Figure, subplot
@@ -70,7 +70,7 @@ class event_chain:
           return self.num_spheres
      
      def find_boxes_to_check(self,s,slope,line,box):
-          l = [-2,-1,0,1,2]
+          L = [-2,-1,0,1,2]
           x_dir = 1
           if slope[1] < 0:
                x_dir = -1
@@ -84,7 +84,7 @@ class event_chain:
           while self.box_width * i <= self.slide_dist * slope[1]:
                i += 1
                next_box = (curr_box[0] + x_dir,
-                           (line['slope'] * self.box_width * (curr_box[0] + x_dir) + line['y_int']) % self.box_width)
+                           int((line['slope'] * self.box_width * (curr_box[0] + x_dir) + line['y_int']) / self.box_width))
                next_box = tuple([x % self.num_boxes for x in next_box])
                
                last_time = False
@@ -92,17 +92,18 @@ class event_chain:
                while True:
                     if inc_y == next_box[1]:
                          last_time = True
-                    for x in l:
-                         for y in l:
+                    for x in L:
+                         for y in L:
                               check_box = ((curr_box[0] + x) % self.num_boxes,
                                            (inc_y + y) % self.num_boxes)
                               if check_box not in box_list:
                                    box_list.append(check_box)
-                    
                     inc_y = (inc_y + y_dir) % self.num_boxes
                     if last_time:
                          break
-                    
+               
+               curr_box = next_box
+                 
           return box_list
      
      def slide_sphere(self,s,slope,box):
@@ -111,10 +112,12 @@ class event_chain:
      	        'y_int':s.coords[1] - slope[0]*s.coords[0]/slope[1]}
      	box_list = self.find_boxes_to_check(s,slope,line,box)
      	
+     	min_sphere = None
+     	min_box = None
      	for b in box_list:
-     		print
-     	
-     	
+     		print b
+     		#Calculate distance for each sphere
+     		#Compare to Min_Sphere
      
      def mix(self,t=1000):
           if self.display and self.not_quiet:
@@ -136,7 +139,6 @@ class event_chain:
                
                plt.show(block=False)
           t0 = 0
-          box_buffer = 1 #- 2 * self.rad_spheres
           while t0 < t:
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
@@ -152,8 +154,12 @@ class event_chain:
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
                
-               self.slide_sphere(temp_s,slope,(x_i,y_i))
-               #UPDATE DISPLAY
+               while self.dist != 0.0:
+                    new_box,next_sphere = self.slide_sphere(temp_s,slope,(x_i,y_i))
+                    #ADD SPHERE BACK IN
+                    #UPDATE DISPLAY
+                    temp_s = next_sphere
+                    del(next_sphere)
                
                del(temp_s)                    
                
