@@ -70,6 +70,7 @@ class event_chain:
           return self.num_spheres
      
      def find_boxes_to_check(self,s,slope,line,box):
+          l = [-2,-1,0,1,2]
           x_dir = 1
           if slope[1] < 0:
                x_dir = -1
@@ -77,19 +78,38 @@ class event_chain:
           if slope[0] < 0:
                y_dir = -1
           
-		box_list = []
-		curr_box = box
-		i = 0
-		while self.box_width * i <= self.slide_dist * slope[1]:
-		     i += 1
-		     next_box = (curr_box[0] + x_dir,
-		                 (line[0] * self.box_width * (curr_box[0] + x_dir) + line[1]) % self.box_width)
-		     next_box = tuple([x % self.num_boxes for x in next_box])
+          box_list = []
+          curr_box = box
+          i = 0
+          while self.box_width * i <= self.slide_dist * slope[1]:
+               i += 1
+               next_box = (curr_box[0] + x_dir,
+                           (line[0] * self.box_width * (curr_box[0] + x_dir) + line[1]) % self.box_width)
+               next_box = tuple([x % self.num_boxes for x in next_box])
+               
+               one_more = False
+               inc_y = curr_box[1]
+               while True:
+                    if inc_y == next_box[1]:
+                         last_time = True
+                    for x in l:
+                         for y in l:
+                              check_box = ((curr_box[0] + x) % self.num_boxes,
+                                           (inc_y + y) % self.num_boxes)
+                              if check_box not in box_list:
+                                   box_list.append(check_box)
+                    
+                    inc_y = (inc_y + y_dir) % self.num_boxes
+                    if last_time:
+                         break
+                    
+          return box_list
      
      def slide_sphere(self,s,slope,box):
      	
-     	line = (slope[0]/slope[1],s.coords[1] - slope[0]*s.coords[0]/slope[1])
-     	box_list = find_boxes_to_check(s,slope,line,box)
+     	line = (slope[0]/slope[1],
+     	        s.coords[1] - slope[0]*s.coords[0]/slope[1])
+     	box_list = self.find_boxes_to_check(s,slope,line,box)
      	
      	for b in box_list:
      		print
@@ -132,7 +152,7 @@ class event_chain:
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
                
-               #SLIDE SPHERE
+               self.slide_sphere(temp_s,slope,(x_i,y_i))
                #UPDATE DISPLAY
                
                del(temp_s)                    
