@@ -1,4 +1,4 @@
-# Event_Chain.py
+# SSGM.py
 
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import Figure, subplot
@@ -10,9 +10,8 @@ from math import pi,sin,cos
 
 class event_chain:
      
-     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000,slide_d=0.5):
+     def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
           self.num_spheres = n
-          self.slide_dist = slide_d
           if rho:
                self.rad_spheres = (float(rho) / (float(n) * pi)) ** (0.5)
           else:
@@ -30,6 +29,8 @@ class event_chain:
           self.not_quiet = True
           self.display = True
           self.d_steps = 1000
+          
+          self.slide_dist = 0.5
           
           i = 0
           x_i = 0.0
@@ -68,14 +69,32 @@ class event_chain:
      def __len__(self):
           return self.num_spheres
      
-     def get_boxes_to_check(self,start_box,coords,slope):
-          box_list = []
-          i = 0
-          curr_box = start_box
-          while self.box_width * i < self.slide_dist * slope[1]:
-               # Add surrounding boxes, check sides
-               # Need to count for bouncing off walls
-               i += 1
+     def find_boxes_to_check(self,s,slope,line,box):
+          x_dir = 1
+          if slope[1] < 0:
+               x_dir = -1
+          y_dir = 1
+          if slope[0] < 0:
+               y_dir = -1
+          
+		box_list = []
+		curr_box = box
+		i = 0
+		while self.box_width * i <= self.slide_dist * slope[1]:
+		     i += 1
+		     next_box = (curr_box[0] + x_dir,
+		                 (line[0] * self.box_width * (curr_box[0] + x_dir) + line[1]) % self.box_width)
+		     next_box = tuple([x % self.num_boxes for x in next_box])
+     
+     def slide_sphere(self,s,slope,box):
+     	
+     	line = (slope[0]/slope[1],s.coords[1] - slope[0]*s.coords[0]/slope[1])
+     	box_list = find_boxes_to_check(s,slope,line,box)
+     	
+     	for b in box_list:
+     		print
+     	
+     	
      
      def mix(self,t=1000):
           if self.display and self.not_quiet:
@@ -84,17 +103,20 @@ class event_chain:
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               CIRCLES = [None] * self.num_spheres
-               
+               CIRCLES = [None] * self.num_spheres * 9
+               L = (-1,0,1)
                for s in self:
-                    if s:
-                         temp_c = plt.Circle(s.coords, radius=s.radius, color='g', fill=True)
-                         CIRCLES[int(s.label)] = temp_c
-                         ax.add_patch(temp_c)
+                    i = 0
+                    for x in L:
+                         for y in L:
+                              temp_c = plt.Circle([s.coords[0] + x,s.coords[1] + y], radius=s.radius, color='g', fill=True)
+                              CIRCLES[int(s.label) * 9 + i] = temp_c
+                              ax.add_patch(temp_c)
+                              i += 1
                
                plt.show(block=False)
           t0 = 0
-          box_buffer = 1 - 2 * self.rad_spheres
+          box_buffer = 1 #- 2 * self.rad_spheres
           while t0 < t:
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
@@ -105,16 +127,13 @@ class event_chain:
                z_i = randint(0,len(self.spheres[x_i][y_i])-1)
                
                temp_s = self.spheres[x_i][y_i][z_i]
-               del(self.spheres[x_i][y_i][z_i])
+               #del(self.spheres[x_i][y_i][z_i])
                
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
                
-               # SLIDE THE SPHERE
-               delta = 0.0
-               while delta < self.slide_dist:
-                    box_list = self.get_boxes_to_check((x_i,y_i),temp_s.coords,slope)
-                    delta += 0.1
+               #SLIDE SPHERE
+               #UPDATE DISPLAY
                
                del(temp_s)                    
                
@@ -141,9 +160,9 @@ if __name__ == '__main__':
                action="store", type="float", default=0.7,
                help="modify the the density, default is 0.7")
      
-     parser.add_option("--slide", metavar='VAL',
+     parser.add_option("--slide_dist", metavar='VAL',
                action="store", type="float", default=0.5,
-               help="modify the distance the disks slide per turn, default is 0.5")
+               help="modify the the sliding distance for spheres, default is 0.5")
      
      parser.add_option("-t", "--timesteps", metavar='VAL',
                action="store", type="int", default=1000,
@@ -169,7 +188,7 @@ if __name__ == '__main__':
                   action="store_true", default=False,
                   help="turns ON graphics")
                    
-     parser.add_option("--d_step", metavar='VAL',
+     parser.add_option("--d_step", metavar='VAR',
                   action="store", type="int", default=500,
                   help="change when display window updates, default is 500")
                   
@@ -182,24 +201,23 @@ if __name__ == '__main__':
      picklename = options.filename
      save_int = options.saveinterval
      disp_int = options.d_step
-     slide_dist = options.slide
+     s_dist = options.slide_dist
      
      if not load_name:
           num_spheres = options.numspheres
           rho = options.rho
           
-          BOX = enevt_chain(num_spheres, rho=rho)
+          BOX = event_chain(num_spheres, rho=rho)
      
      else:
           BOX = load(open( load_name, "rb" ))
      
-     BOX.slide_dist = slide_dist
      BOX.pfile = picklename
      BOX.p_steps = save_int
      BOX.not_quiet = not_quiet
      BOX.display = show_display
-     BOX.d_steps = disp_int
-     
+     BOX.d_steps = disp_int 
+     BOX.slide_dist = s_dist 
      BOX.mix(t)
      
      if not_quiet:
@@ -207,13 +225,4 @@ if __name__ == '__main__':
           print BOX
           
           if show_display:
-               fig=plt.figure(1)
-               plt.axis([0,1,0,1])
-               ax=fig.add_subplot(1,1,1)
-               ax.set_aspect('equal')
-               
-               for s in BOX:
-                    if s:
-                         ax.add_patch(plt.Circle(s.coords, radius=s.radius, color='g', fill=True))
-               
-               plt.show(block=True)
+	          plt.show(block=True)
