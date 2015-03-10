@@ -70,7 +70,7 @@ class event_chain:
      def __len__(self):
           return self.num_spheres
      
-     def find_boxes_to_check(self,s,slope,line,box):
+     def find_boxes_to_check(self,s,box,slope,dist_left):
           """
           L = [-2,-1,0,1,2]
           x_dir = 1
@@ -113,7 +113,7 @@ class event_chain:
           
           return box_list
      
-     def slide_sphere(self,s,slope,box):
+     def slide_sphere(self,s,box,slope,dist_left):
           """
           line = {'slope':slope[0]/slope[1],
                   'y_int':s.coords[1] - slope[0]*s.coords[0]/slope[1]}
@@ -137,12 +137,16 @@ class event_chain:
                          min_sphere = t_s
           return min_box,min_sphere,min_dist
           """
-
+          
+          box_list = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'parity':(a,b)},...]; a,b in [-1,0,1] 
+          
+          
+          
           min_box = (0,0,0)
           min_sphere = None
-          min_dist = 100000
-
-          return min_box,min_sphere,min_dist
+          min_dist = dist_left
+          
+          return min_sphere,min_box,min_dist
 
      def mix(self,t=1000):
           if self.display and self.not_quiet:
@@ -176,23 +180,28 @@ class event_chain:
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
                
-               """
                temp_s = self.spheres[x_i][y_i][z_i]
                del(self.spheres[x_i][y_i][z_i])
                
-               while self.slide_dist != 0.0:
-                    new_box,next_sphere,slide_d = self.slide_sphere(temp_s,slope,(x_i,y_i))
-                    temp_s.coords[0] += slope[1] * slide_d
-                    temp_s.coords[1] += slope[0] * slide_d
-                    self.spheres[new_box[0]][new_box[1]].append(temp_s)
-                    del(temp_s)
+               dist_left = self.slide_dist
+               box = (x_i,y_i)
+               while dist_left > 0.0 and temp_s != None:
+                    next_sphere,box,dist_traveled = self.slide_sphere(temp_s,box,slope,dist_left)
+                    temp_s.coords[0] = (temp_s.coords[0] + slope[1] * dist_traveled) % 1.0
+                    temp_s.coords[1] = (temp_s.coords[1] + slope[0] * dist_traveled) % 1.0
+                    self.spheres[int(temp_s.coords[0] / self.box_width)][int(temp_s.coords[1] / self.box_width)].append(temp_s)
+                    if self.display:
+                         circ_index = int(temp_s.label)
+                         i = 0
+                         for x in L:
+                              for y in L:
+                                   CIRCLES[circ_index * 9 + i].center = [temp_s.coords[0] + x, temp_s.coords[1] + y]
+                                   i += 1
                     temp_s = next_sphere
-                    self.slide_dist -= slide_d
                     del(next_sphere)
+                    dist_left -= dist_traveled      
                
                del(temp_s)
-               
-               """
                
                self.timesteps += 1
                t0 += 1
