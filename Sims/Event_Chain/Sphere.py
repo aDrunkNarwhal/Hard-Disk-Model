@@ -1,5 +1,5 @@
 # Sphere.py
-from math import pi
+from math import pi,sqrt
 
 class sphere:
 
@@ -43,11 +43,11 @@ class sphere:
                d += (other[c] - self.coords[c]) ** 2.0
           return d
           
-     def calc_dist_from_line_sq(self,base,coords):               
-          b_sq = base ** 2.0
-          d_sq = self.calc_dist_sq(coords)
+     def calc_dist_from_line_sq(self,line):               
+          num = (-line['slope'] * self.coords[0] + self.coords[1] - line['y_int']) ** 2.0
+          denom = line['slope']**2.0 + 1.0
           
-          return d_sq - b_sq
+          return num / denom
      
      def __lt__(self,coords):
           if len(coords) != len(self.coords):

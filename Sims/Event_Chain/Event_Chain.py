@@ -6,7 +6,7 @@ from optparse import OptionParser
 from pickle import load,dump
 from Sphere import sphere
 from random import random,randint
-from math import pi,sin,cos
+from math import pi,sin,cos,sqrt
 
 class event_chain:
      
@@ -29,7 +29,8 @@ class event_chain:
           self.not_quiet = True
           self.display = True
           self.d_steps = 1000
-          
+                    
+          self.slide_dist_org = 0.5
           self.slide_dist = 0.5
           
           i = 0
@@ -108,17 +109,29 @@ class event_chain:
      
      def slide_sphere(self,s,slope,box):
      	
-     	line = {'slope':slope[0]/slope[1],
-     	        'y_int':s.coords[1] - slope[0]*s.coords[0]/slope[1]}
-     	box_list = self.find_boxes_to_check(s,slope,line,box)
-     	
-     	min_sphere = None
-     	min_box = None
-     	for b in box_list:
-     		print b
-     		#Calculate distance for each sphere
-     		#Compare to Min_Sphere
-     
+          line = {'slope':slope[0]/slope[1],
+                  'y_int':s.coords[1] - slope[0]*s.coords[0]/slope[1]}
+          box_list = self.find_boxes_to_check(s,slope,line,box)
+
+          min_sphere = None
+          min_box = (0,0)
+          min_dist = 100000
+          print self.num_boxes ** 2,len(box_list)
+          for b in box_list:
+               for t_s in self.spheres[b[0]][b[1]]:
+                    base = (s.coords[0] - t_s.coords[0]) * slope[1] + (s.coords[1] - t_s.coords[1]) * slope[0]
+                    h_sq = t_s.calc_dist_from_line_sq(line)
+                    x = (2.0 * self.rad_spheres) ** 2 - h_sq
+                    if x < 0.0 or base < 0.0:
+                         continue
+                    x = sqrt(x)
+                    q = base - x
+                    if q < min_dist:
+                         min_dist = q
+                         min_box = b
+                         min_sphere = t_s
+          return min_box,min_sphere,min_dist
+
      def mix(self,t=1000):
           if self.display and self.not_quiet:
                fig=plt.figure(1)
@@ -149,19 +162,23 @@ class event_chain:
                z_i = randint(0,len(self.spheres[x_i][y_i])-1)
                
                temp_s = self.spheres[x_i][y_i][z_i]
-               #del(self.spheres[x_i][y_i][z_i])
+               del(self.spheres[x_i][y_i][z_i])
                
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
                
-               while self.dist != 0.0:
-                    new_box,next_sphere = self.slide_sphere(temp_s,slope,(x_i,y_i))
-                    #ADD SPHERE BACK IN
-                    #UPDATE DISPLAY
+               while self.slide_dist != 0.0:
+                    new_box,next_sphere,slide_d = self.slide_sphere(temp_s,slope,(x_i,y_i))
+                    temp_s.coords[0] += slope[1] * slide_d
+                    temp_s.coords[1] += slope[0] * slide_d
+                    self.spheres[new_box[0]][new_box[1]].append(temp_s)
+                    del(temp_s)
                     temp_s = next_sphere
+                    print slide_d
+                    self.slide_dist -= slide_d
                     del(next_sphere)
                
-               del(temp_s)                    
+               del(temp_s)
                
                self.timesteps += 1
                t0 += 1
