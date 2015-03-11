@@ -71,7 +71,11 @@ class event_chain:
           return self.num_spheres
      
      def find_boxes_to_check(self,s,box,slope,dist_left):
-          """
+          
+          line = {}
+          line['slope'] = slope[0]/slope[1]
+          line['y_int'] = s.coords[1] - line['slope'] * s.coords[0]
+          
           L = [-2,-1,0,1,2]
           x_dir = 1
           if slope[1] < 0:
@@ -83,12 +87,12 @@ class event_chain:
           box_list = []
           curr_box = box
           i = 0
-          while self.box_width * i <= self.slide_dist * slope[1]:
+          while self.box_width * i <= abs(dist_left * slope[1]):
                i += 1
                next_box = (curr_box[0] + x_dir,
                            int((line['slope'] * self.box_width * (curr_box[0] + x_dir) + line['y_int']) / self.box_width))
                next_box = tuple([x % self.num_boxes for x in next_box])
-               
+                              
                last_time = False
                inc_y = curr_box[1]
                while True:
@@ -98,54 +102,62 @@ class event_chain:
                          for y in L:
                               check_box = ((curr_box[0] + x) % self.num_boxes,
                                            (inc_y + y) % self.num_boxes)
-                              if check_box not in box_list:
-                                   box_list.append(check_box)
+                              if check_box[0] - box[0] < 0:
+                                   x_par = x_dir
+                              else:
+                                   x_par = 0
+                              
+                              if check_box[1] - box[1] < 0:
+                                   y_par = y_dir
+                              else:
+                                   y_par = 0
+                              
+                              temp_dict = {'coords':check_box,'parity':(x_par,y_par)}
+                              
+                              if temp_dict not in box_list:
+                                   box_list.append(temp_dict)
+                              
+                              del(temp_dict)
+                              
                     inc_y = (inc_y + y_dir) % self.num_boxes
                     if last_time:
                          break
                
                curr_box = next_box
                  
-          return box_list
-          """
-          
-          box_list = []
-          
-          return box_list
+          return box_list,line
      
+     def calc_dist_from_line_sq(self,coords,line):
+          num = (-line['slope'] * coords[0] + coords[1] - line['y_int']) ** 2.0
+          denom = line['slope']**2.0 + 1.0
+          
+          return num / denom
+         
      def slide_sphere(self,s,box,slope,dist_left):
-          """
-          line = {'slope':slope[0]/slope[1],
-                  'y_int':s.coords[1] - slope[0]*s.coords[0]/slope[1]}
-          box_list = self.find_boxes_to_check(s,slope,line,box)
-
-          min_sphere = None
+          
+          box_list,line = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'parity':(a,b)},...]; a,b in [-1,0,1] 
+          
           min_box = (0,0)
-          min_dist = 100000
-          for b in box_list:
-               for t_s in self.spheres[b[0]][b[1]]:
-                    base = (s.coords[0] - t_s.coords[0]) * slope[1] + (s.coords[1] - t_s.coords[1]) * slope[0]
-                    h_sq = t_s.calc_dist_sq(s) - base ** 2.0
-                    x = (2.0 * self.rad_spheres) ** 2 - h_sq
-                    if x < 0.0 or base < 0.0:
-                         continue
-                    x = sqrt(x)
-                    q = base - x
-                    if q < min_dist:
-                         min_dist = q
-                         min_box = b
-                         min_sphere = t_s
-          return min_box,min_sphere,min_dist
-          """
-          
-          box_list = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'parity':(a,b)},...]; a,b in [-1,0,1] 
-          
-          
-          
-          min_box = (0,0,0)
           min_sphere = None
           min_dist = dist_left
           
+          for b in box_list:
+               for t_s in self.spheres[b['coords'][0]][b['coords'][1]]:
+                    temp_coords = (t_s.coords[0] + b['parity'][0],
+                                   t_s.coords[1] + b['parity'][1])
+                    
+                    h_sq = self.calc_dist_from_line_sq(temp_coords,line)
+                    base_sq = s.calc_dist_sq(temp_coords) - h_sq
+                    x_sq = (2.0 * self.rad_spheres) ** 2.0 - h_sq
+                    if x_sq < 0.0 or base_sq < 0.0:
+                         continue
+                    x = sqrt(x_sq)
+                    base = sqrt(base_sq)
+                    q = base - x
+                    if q < min_dist:
+                         min_dist = q
+                         min_box = b['coords']
+                         min_sphere = t_s
           return min_sphere,min_box,min_dist
 
      def mix(self,t=1000):
@@ -169,6 +181,7 @@ class event_chain:
                plt.show(block=False)
           t0 = 0
           while t0 < t:
+               print t0
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
                while not self.spheres[x_i][y_i]:
@@ -181,11 +194,10 @@ class event_chain:
                slope = (sin(angle),cos(angle))
                
                temp_s = self.spheres[x_i][y_i][z_i]
-               del(self.spheres[x_i][y_i][z_i])
-               
-               dist_left = self.slide_dist
                box = (x_i,y_i)
+               dist_left = self.slide_dist
                while dist_left > 0.0 and temp_s != None:
+                    self.spheres[box[0]][box[1]].remove(temp_s)
                     next_sphere,box,dist_traveled = self.slide_sphere(temp_s,box,slope,dist_left)
                     temp_s.coords[0] = (temp_s.coords[0] + slope[1] * dist_traveled) % 1.0
                     temp_s.coords[1] = (temp_s.coords[1] + slope[0] * dist_traveled) % 1.0
