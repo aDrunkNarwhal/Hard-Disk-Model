@@ -8,6 +8,8 @@ from Sphere import sphere
 from random import random,randint
 from math import pi,sin,cos,sqrt
 
+import code
+
 class event_chain:
      
      def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
@@ -102,17 +104,17 @@ class event_chain:
                          for y in L:
                               check_box = ((curr_box[0] + x) % self.num_boxes,
                                            (inc_y + y) % self.num_boxes)
-                              if check_box[0] - box[0] < 0:
+                              if (check_box[0] - box[0]) * x_dir < 0:
                                    x_par = x_dir
                               else:
                                    x_par = 0
                               
-                              if check_box[1] - box[1] < 0:
+                              if (check_box[1] - box[1]) * y_dir < 0:
                                    y_par = y_dir
                               else:
                                    y_par = 0
                               
-                              temp_dict = {'coords':check_box,'parity':(x_par,y_par)}
+                              temp_dict = {'coords':check_box,'shift':(x_par,y_par)}
                               
                               if temp_dict not in box_list:
                                    box_list.append(temp_dict)
@@ -135,7 +137,10 @@ class event_chain:
          
      def slide_sphere(self,s,box,slope,dist_left):
           
-          box_list,line = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'parity':(a,b)},...]; a,b in [-1,0,1] 
+          box_list,line = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'shift':(a,b)},...]; a,b in [-1,0,1] 
+          #print box_list
+          
+          #code.interact(local=locals())
           
           min_box = (0,0)
           min_sphere = None
@@ -143,8 +148,8 @@ class event_chain:
           
           for b in box_list:
                for t_s in self.spheres[b['coords'][0]][b['coords'][1]]:
-                    temp_coords = (t_s.coords[0] + b['parity'][0],
-                                   t_s.coords[1] + b['parity'][1])
+                    temp_coords = (t_s.coords[0] + b['shift'][0],
+                                   t_s.coords[1] + b['shift'][1])
                     
                     base = (temp_coords[0] - s.coords[0]) * slope[1] + (temp_coords[1] - s.coords[1]) * slope[0]
                     h_sq = s.calc_dist_sq(temp_coords) - base ** 2.0
@@ -153,7 +158,7 @@ class event_chain:
                          continue
                     x = sqrt(x_sq)
                     q = base - x
-                    if q < dist_left and q >= 0.0 and q < min_dist:
+                    if q >= 0.0 and q < min_dist:
                          min_dist = q
                          min_box = b['coords']
                          min_sphere = t_s
@@ -180,6 +185,7 @@ class event_chain:
                plt.show(block=False)
           t0 = 0
           while t0 < t:
+               # generate random label instead of box
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
                while not self.spheres[x_i][y_i]:
