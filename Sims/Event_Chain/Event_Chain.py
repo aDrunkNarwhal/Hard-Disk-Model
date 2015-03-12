@@ -146,15 +146,14 @@ class event_chain:
                     temp_coords = (t_s.coords[0] + b['parity'][0],
                                    t_s.coords[1] + b['parity'][1])
                     
-                    h_sq = self.calc_dist_from_line_sq(temp_coords,line)
-                    base_sq = s.calc_dist_sq(temp_coords) - h_sq
+                    base = (temp_coords[0] - s.coords[0]) * slope[1] + (temp_coords[1] - s.coords[1]) * slope[0]
+                    h_sq = s.calc_dist_sq(temp_coords) - base ** 2.0
                     x_sq = (2.0 * self.rad_spheres) ** 2.0 - h_sq
-                    if x_sq < 0.0 or base_sq < 0.0:
+                    if x_sq < 0.0 or base < 0.0:
                          continue
                     x = sqrt(x_sq)
-                    base = sqrt(base_sq)
                     q = base - x
-                    if q < min_dist:
+                    if q < dist_left and q >= 0.0 and q < min_dist:
                          min_dist = q
                          min_box = b['coords']
                          min_sphere = t_s
@@ -181,7 +180,6 @@ class event_chain:
                plt.show(block=False)
           t0 = 0
           while t0 < t:
-               print t0
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
                while not self.spheres[x_i][y_i]:
@@ -211,7 +209,7 @@ class event_chain:
                                    i += 1
                     temp_s = next_sphere
                     del(next_sphere)
-                    dist_left -= dist_traveled      
+                    dist_left -= dist_traveled
                
                del(temp_s)
                
