@@ -35,6 +35,8 @@ class event_chain:
           self.slide_dist_org = 0.5
           self.slide_dist = 0.5
           
+          self.debug = False
+          
           i = 0
           x_i = 0.0
           for x in range(self.num_boxes):
@@ -72,13 +74,36 @@ class event_chain:
      def __len__(self):
           return self.num_spheres
      
+     def next_box_entry_point(self,point,slope,direction,line,box):
+          x_new = (box[0] + direction[0]) * self.box_width
+          if x_new > 1.0:
+               x_new = 1.0
+          #elif x_new < 0.0:
+          #     x_new = 0.0
+          
+          y_new = line['slope'] * x_new + line['y_int']
+          
+          if y_new >= box[1] * self.box_width and y_new < (box[1] + 1) * self.box_width and y_new <= 1.0:
+               return (x_new,y_new),(direction[0],0)
+          
+          
+          y_new = (box[1] + direction[1]) * self.box_width
+          if y_new > 1.0:
+               y_new = 1.0
+          #elif y_new < 0.0:
+          #     y_new = 0.0
+          
+          x_new = (y_new - line['y_int']) / line['slope']
+          
+          return (x_new,y_new),(0,direction[1])
+     
      def find_boxes_to_check(self,s,box,slope,dist_left):
           
           line = {}
           line['slope'] = slope[0]/slope[1]
           line['y_int'] = s.coords[1] - line['slope'] * s.coords[0]
           
-          L = [-2,-1,0,1,2]
+          L = [-1,0,1]
           x_dir = 1
           if slope[1] < 0:
                x_dir = -1
@@ -88,59 +113,70 @@ class event_chain:
           
           box_list = []
           curr_box = box
-          i = 0
-          while self.box_width * i <= abs(dist_left * slope[1]):
-               i += 1
-               next_box = (curr_box[0] + x_dir,
-                           int((line['slope'] * self.box_width * (curr_box[0] + x_dir) + line['y_int']) / self.box_width))
-               next_box = tuple([x % self.num_boxes for x in next_box])
-                              
-               last_time = False
-               inc_y = curr_box[1]
-               while True:
-                    if inc_y == next_box[1]:
-                         last_time = True
-                    for x in L:
-                         for y in L:
-                              check_box = ((curr_box[0] + x) % self.num_boxes,
-                                           (inc_y + y) % self.num_boxes)
-                              if (check_box[0] - box[0]) * x_dir < 0:
-                                   x_par = x_dir
-                              else:
-                                   x_par = 0
-                              
-                              if (check_box[1] - box[1]) * y_dir < 0:
-                                   y_par = y_dir
-                              else:
-                                   y_par = 0
-                              
-                              temp_dict = {'coords':check_box,'shift':(x_par,y_par)}
-                              
-                              if temp_dict not in box_list:
-                                   box_list.append(temp_dict)
-                              
-                              del(temp_dict)
-                              
-                    inc_y = (inc_y + y_dir) % self.num_boxes
-                    if last_time:
-                         break
-               
-               curr_box = next_box
-                 
-          return box_list,line
-     
-     def calc_dist_from_line_sq(self,coords,line):
-          num = (-line['slope'] * coords[0] + coords[1] - line['y_int']) ** 2.0
-          denom = line['slope']**2.0 + 1.0
+          curr_point = s.coords          
+          dist_traveled = 0.0
           
-          return num / denom
+          for x in L:
+               for y in L:
+                    check_box = (next_box[0] + x,next_box[1] + y)
+                    check_box = tuple([p % self.num_boxes for p in check_box])
+                    
+                    if (check_box[0] - box[0]) * x_dir < 0.0:
+                         x_shift = x_dir
+                    else:
+                         x_shift = 0
+                    if (check_box[1] - box[1]) * y_dir < 0.0:
+                         y_shift = y_dir
+                    else:
+                         y_shift = 0
+                    
+                    temp_dict = {'coords':check_box,'shift':(x_shift,y_shift)}
+                    if temp_dict not in box_list:
+                         box_list.append(temp_dict)
+                    
+                    del(temp_dict)
+          
+          while dist_traveled < dist_left:
+               next_point, box_dir = self.next_box_entry_point(curr_point,slope,(x_dir,y_dir),line,curr_box)
+               dist_traveled += sqrt((curr_point[0] - next_point[0]) ** 2 + (curr_point[1] - next_point[1]) ** 2)
+               
+               next_box = (curr_box[0] + box_dir[0],curr_box[1] + box_dir[1])
+               next_box = tuple([p % self.num_boxes for p in next_box])
+               
+               for x in L:
+                    for y in L:
+                         check_box = (next_box[0] + x,next_box[1] + y)
+                         check_box = tuple([p % self.num_boxes for p in check_box])
+                         
+                         if (check_box[0] - box[0]) * x_dir < 0.0:
+                              x_shift = x_dir
+                         else:
+                              x_shift = 0
+                         if (check_box[1] - box[1]) * y_dir < 0.0:
+                              y_shift = y_dir
+                         else:
+                              y_shift = 0
+                         
+                         temp_dict = {'coords':check_box,'shift':(x_shift,y_shift)}
+                         if temp_dict not in box_list:
+                              box_list.append(temp_dict)
+                         
+                         del(temp_dict)
+                         
+               curr_point = next_point
+               curr_box = next_box
+               del(next_box)
+               del(next_point)
+          
+          return box_list
          
      def slide_sphere(self,s,box,slope,dist_left):
           
-          box_list,line = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'shift':(a,b)},...]; a,b in [-1,0,1] 
-          #print box_list
+          box_list = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'shift':(a,b)},...]; a,b in [-1,0,1] 
           
-          #code.interact(local=locals())
+          if self.debug == True:
+               print box_list
+               code.interact(local=locals())
           
           min_box = (0,0)
           min_sphere = None
@@ -185,7 +221,7 @@ class event_chain:
                plt.show(block=False)
           t0 = 0
           while t0 < t:
-               # generate random label instead of box
+               #TODO: generate random label instead of box
                x_i = randint(0,self.num_boxes-1)
                y_i = randint(0,self.num_boxes-1)
                while not self.spheres[x_i][y_i]:
@@ -196,6 +232,9 @@ class event_chain:
                
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
+               while slope[0] == 0 or slope[1] == 0:
+                    angle = random() * 2 * pi
+                    slope = (sin(angle),cos(angle))
                
                temp_s = self.spheres[x_i][y_i][z_i]
                box = (x_i,y_i)
@@ -273,7 +312,11 @@ if __name__ == '__main__':
      parser.add_option("--d_step", metavar='VAR',
                   action="store", type="int", default=500,
                   help="change when display window updates, default is 500")
-                  
+     
+     parser.add_option("--debug",
+                  action="store_true", default=False,
+                  help="turns ON debug")
+     
      (options, args) = parser.parse_args()
      
      t = options.timesteps
@@ -293,6 +336,8 @@ if __name__ == '__main__':
      
      else:
           BOX = load(open( load_name, "rb" ))
+     
+     BOX.debug = options.debug
      
      BOX.pfile = picklename
      BOX.p_steps = save_int
