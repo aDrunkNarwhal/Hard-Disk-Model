@@ -78,8 +78,6 @@ class event_chain:
           x_new = (box[0] + direction[0]) * self.box_width
           if x_new > 1.0:
                x_new = 1.0
-          #elif x_new < 0.0:
-          #     x_new = 0.0
           
           y_new = line['slope'] * x_new + line['y_int']
           
@@ -90,12 +88,32 @@ class event_chain:
           y_new = (box[1] + direction[1]) * self.box_width
           if y_new > 1.0:
                y_new = 1.0
-          #elif y_new < 0.0:
-          #     y_new = 0.0
           
           x_new = (y_new - line['y_int']) / line['slope']
           
           return (x_new,y_new),(0,direction[1])
+     
+     def add_boxes(self,box_list,center_box,center_shift):
+          
+          L = [-1,0,1]
+          for x in L:
+               for y in L:
+                    
+                    check_box = (center_box[0] + x,center_box[1] + y)
+                    check_box = tuple([p % self.num_boxes for p in check_box])
+                    
+                    x_shift,y_shift = center_shift
+                    
+                    if abs(check_box[0] - center_box[0]) > 1:
+                         x_shift += x
+                    if abs(check_box[1] - center_box[1]) > 1:
+                         y_shift += y
+                    
+                    temp_dict = {'coords':check_box,'shift':(x_shift,y_shift)}
+                    if temp_dict not in box_list:
+                         box_list.append(temp_dict)
+                    
+                    del(temp_dict)
      
      def find_boxes_to_check(self,s,box,slope,dist_left):
           
@@ -103,7 +121,6 @@ class event_chain:
           line['slope'] = slope[0]/slope[1]
           line['y_int'] = s.coords[1] - line['slope'] * s.coords[0]
           
-          L = [-1,0,1]
           x_dir = 1
           if slope[1] < 0:
                x_dir = -1
@@ -116,25 +133,9 @@ class event_chain:
           curr_point = s.coords          
           dist_traveled = 0.0
           
-          for x in L:
-               for y in L:
-                    check_box = (next_box[0] + x,next_box[1] + y)
-                    check_box = tuple([p % self.num_boxes for p in check_box])
-                    
-                    if (check_box[0] - box[0]) * x_dir < 0.0:
-                         x_shift = x_dir
-                    else:
-                         x_shift = 0
-                    if (check_box[1] - box[1]) * y_dir < 0.0:
-                         y_shift = y_dir
-                    else:
-                         y_shift = 0
-                    
-                    temp_dict = {'coords':check_box,'shift':(x_shift,y_shift)}
-                    if temp_dict not in box_list:
-                         box_list.append(temp_dict)
-                    
-                    del(temp_dict)
+          self.add_boxes(box_list,curr_box,(0,0))
+          
+          #one_more_time = False
           
           while dist_traveled < dist_left:
                next_point, box_dir = self.next_box_entry_point(curr_point,slope,(x_dir,y_dir),line,curr_box)
@@ -143,40 +144,32 @@ class event_chain:
                next_box = (curr_box[0] + box_dir[0],curr_box[1] + box_dir[1])
                next_box = tuple([p % self.num_boxes for p in next_box])
                
-               for x in L:
-                    for y in L:
-                         check_box = (next_box[0] + x,next_box[1] + y)
-                         check_box = tuple([p % self.num_boxes for p in check_box])
-                         
-                         if (check_box[0] - box[0]) * x_dir < 0.0:
-                              x_shift = x_dir
-                         else:
-                              x_shift = 0
-                         if (check_box[1] - box[1]) * y_dir < 0.0:
-                              y_shift = y_dir
-                         else:
-                              y_shift = 0
-                         
-                         temp_dict = {'coords':check_box,'shift':(x_shift,y_shift)}
-                         if temp_dict not in box_list:
-                              box_list.append(temp_dict)
-                         
-                         del(temp_dict)
+               x_shift,y_shift = (0,0)
+               
+               if (next_box[0] - box[0]) * x_dir < 0.0:
+                    x_shift = x_dir
+               if (next_box[1] - box[1]) * y_dir < 0.0:
+                    y_shift = y_dir
+               
+               self.add_boxes(box_list,next_box,(x_shift,y_shift))
                          
                curr_point = next_point
                curr_box = next_box
+               
                del(next_box)
                del(next_point)
+               
+               #if one_more_time:
+               #     break
+               
+               #if dist_traveled > dist_left:
+               #     one_more_time = True
           
           return box_list
          
      def slide_sphere(self,s,box,slope,dist_left):
           
           box_list = self.find_boxes_to_check(s,box,slope,dist_left)  # [{'coords':(int,int),'shift':(a,b)},...]; a,b in [-1,0,1] 
-          
-          if self.debug == True:
-               print box_list
-               code.interact(local=locals())
           
           min_box = (0,0)
           min_sphere = None
@@ -188,17 +181,21 @@ class event_chain:
                                    t_s.coords[1] + b['shift'][1])
                     
                     base = (temp_coords[0] - s.coords[0]) * slope[1] + (temp_coords[1] - s.coords[1]) * slope[0]
+                    if base < 0:
+                         continue
                     h_sq = s.calc_dist_sq(temp_coords) - base ** 2.0
-                    x_sq = (2.0 * self.rad_spheres) ** 2.0 - h_sq
-                    if x_sq < 0.0 or base < 0.0:
+                    x_sq = (2.0 * self.rad_spheres + 0.001) ** 2.0 - h_sq
+                    if x_sq < 0.0:
                          continue
                     x = sqrt(x_sq)
                     q = base - x
-                    if q >= 0.0 and q < min_dist:
+                    if q < 0:       #TODO: This should never happen, but it does
+                         continue
+                    if q < min_dist:
                          min_dist = q
                          min_box = b['coords']
                          min_sphere = t_s
-          return min_sphere,min_box,min_dist
+          return min_sphere,min_box,min_dist,box_list
 
      def mix(self,t=1000):
           if self.display and self.not_quiet:
@@ -241,7 +238,7 @@ class event_chain:
                dist_left = self.slide_dist
                while dist_left > 0.0 and temp_s != None:
                     self.spheres[box[0]][box[1]].remove(temp_s)
-                    next_sphere,box,dist_traveled = self.slide_sphere(temp_s,box,slope,dist_left)
+                    next_sphere,box,dist_traveled,box_list = self.slide_sphere(temp_s,box,slope,dist_left)
                     temp_s.coords[0] = (temp_s.coords[0] + slope[1] * dist_traveled) % 1.0
                     temp_s.coords[1] = (temp_s.coords[1] + slope[0] * dist_traveled) % 1.0
                     self.spheres[int(temp_s.coords[0] / self.box_width)][int(temp_s.coords[1] / self.box_width)].append(temp_s)
@@ -255,6 +252,13 @@ class event_chain:
                     temp_s = next_sphere
                     del(next_sphere)
                     dist_left -= dist_traveled
+                    if self.display and self.not_quiet and self.debug:
+                         plt.draw()
+                         print 
+                         print slope
+                         for x in box_list:
+                              print x
+                         code.interact(local=locals())
                
                del(temp_s)
                
@@ -263,7 +267,8 @@ class event_chain:
                
                if self.display and self.not_quiet and self.timesteps % self.d_steps == 0:
                    plt.draw()
-                    
+              
+               
                if self.pfile and self.timesteps % self.p_steps == 0:
                     dump(self, open( self.pfile, "wb" ))
                     if self.not_quiet:
