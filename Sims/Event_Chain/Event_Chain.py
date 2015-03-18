@@ -10,6 +10,9 @@ from math import pi,sin,cos,sqrt
 
 import code
 
+
+L = (-1,0,1)
+
 class event_chain:
      
      def __init__(self,n,r=0.15,rho=None,pfile=None,p_steps=10000):
@@ -36,6 +39,8 @@ class event_chain:
           self.slide_dist = 0.5
           
           self.debug = False
+          
+          self.CIRCLES = None
           
           i = 0
           x_i = 0.0
@@ -135,8 +140,6 @@ class event_chain:
           
           self.add_boxes(box_list,curr_box,(0,0))
           
-          #one_more_time = False
-          
           while dist_traveled < dist_left:
                next_point, box_dir = self.next_box_entry_point(curr_point,slope,(x_dir,y_dir),line,curr_box)
                dist_traveled += sqrt((curr_point[0] - next_point[0]) ** 2 + (curr_point[1] - next_point[1]) ** 2)
@@ -159,12 +162,6 @@ class event_chain:
                del(next_box)
                del(next_point)
                
-               #if one_more_time:
-               #     break
-               
-               #if dist_traveled > dist_left:
-               #     one_more_time = True
-          
           return box_list
          
      def slide_sphere(self,s,box,slope,dist_left):
@@ -182,19 +179,48 @@ class event_chain:
                     
                     base = (temp_coords[0] - s.coords[0]) * slope[1] + (temp_coords[1] - s.coords[1]) * slope[0]
                     if base < 0:
+                         if self.display and self.not_quiet and self.debug:
+                              circ_index = int(t_s.label)
+                              i = 0
+                              for x in L:
+                                   for y in L:
+                                        self.CIRCLES[circ_index * 9 + i].set_color('purple')
+                                        i += 1
                          continue
                     h_sq = s.calc_dist_sq(temp_coords) - base ** 2.0
                     x_sq = (2.0 * self.rad_spheres + 0.001) ** 2.0 - h_sq
                     if x_sq < 0.0:
+                         if self.display and self.not_quiet and self.debug:
+                              circ_index = int(t_s.label)
+                              i = 0
+                              for x in L:
+                                   for y in L:
+                                        self.CIRCLES[circ_index * 9 + i].set_color('blue')
+                                        i += 1
                          continue
                     x = sqrt(x_sq)
                     q = base - x
                     if q < 0:       #TODO: This should never happen, but it does
+                         if self.display and self.not_quiet and self.debug:
+                              circ_index = int(t_s.label)
+                              i = 0
+                              for x in L:
+                                   for y in L:
+                                        self.CIRCLES[circ_index * 9 + i].set_color('orange')
+                                        i += 1
                          continue
+                    if self.display and self.not_quiet and self.debug:
+                         circ_index = int(t_s.label)
+                         i = 0
+                         for x in L:
+                              for y in L:
+                                   self.CIRCLES[circ_index * 9 + i].set_color('yellow')
+                                   i += 1
                     if q < min_dist:
                          min_dist = q
                          min_box = b['coords']
                          min_sphere = t_s
+          
           return min_sphere,min_box,min_dist,box_list
 
      def mix(self,t=1000):
@@ -204,14 +230,13 @@ class event_chain:
                ax=fig.add_subplot(1,1,1)
                ax.set_aspect('equal')
                
-               CIRCLES = [None] * self.num_spheres * 9
-               L = (-1,0,1)
+               self.CIRCLES = [None] * self.num_spheres * 9
                for s in self:
                     i = 0
                     for x in L:
                          for y in L:
                               temp_c = plt.Circle([s.coords[0] + x,s.coords[1] + y], radius=s.radius, color='g', fill=True)
-                              CIRCLES[int(s.label) * 9 + i] = temp_c
+                              self.CIRCLES[int(s.label) * 9 + i] = temp_c
                               ax.add_patch(temp_c)
                               i += 1
                
@@ -239,6 +264,16 @@ class event_chain:
                while dist_left > 0.0 and temp_s != None:
                     self.spheres[box[0]][box[1]].remove(temp_s)
                     next_sphere,box,dist_traveled,box_list = self.slide_sphere(temp_s,box,slope,dist_left)
+                    if self.display and self.not_quiet and self.debug:
+                         if temp_s:
+                              circ_index = int(temp_s.label)
+                              i = 0
+                              for x in L:
+                                   for y in L:
+                                        self.CIRCLES[circ_index * 9 + i].set_color('r')
+                                        i += 1
+                         plt.draw()
+                         code.interact(local=locals())
                     temp_s.coords[0] = (temp_s.coords[0] + slope[1] * dist_traveled) % 1.0
                     temp_s.coords[1] = (temp_s.coords[1] + slope[0] * dist_traveled) % 1.0
                     self.spheres[int(temp_s.coords[0] / self.box_width)][int(temp_s.coords[1] / self.box_width)].append(temp_s)
@@ -247,18 +282,25 @@ class event_chain:
                          i = 0
                          for x in L:
                               for y in L:
-                                   CIRCLES[circ_index * 9 + i].center = [temp_s.coords[0] + x, temp_s.coords[1] + y]
+                                   self.CIRCLES[circ_index * 9 + i].center = [temp_s.coords[0] + x, temp_s.coords[1] + y]
                                    i += 1
+                    if self.display and self.not_quiet and self.debug:
+                         
+                         plt.draw()
+                         for z in range(len(self.CIRCLES)):
+                              self.CIRCLES[z].set_color('g')
+                         
+                         print 'Red    : current sphere'
+                         print 'Purple : behind'
+                         print 'Blue   : too far from line'
+                         print 'Yellow : possible hit'
+                         print 'Orange : BAD CALC (Overlap possible)'
+                         print 'Green  : Not Considered (Overlap possible)'
+                         print 'SLOPE:',slope[0]/slope[1]
+                         code.interact(local=locals())
                     temp_s = next_sphere
                     del(next_sphere)
                     dist_left -= dist_traveled
-                    if self.display and self.not_quiet and self.debug:
-                         plt.draw()
-                         print 
-                         print slope
-                         for x in box_list:
-                              print x
-                         code.interact(local=locals())
                
                del(temp_s)
                
