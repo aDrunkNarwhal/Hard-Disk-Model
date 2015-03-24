@@ -28,6 +28,7 @@ class event_chain:
           if 1.0 % (self.box_width) != 0:
                self.num_boxes += 1
           self.spheres = []
+          self.sphere_locations = {}
           self.timesteps = 0
           self.pfile = pfile
           self.p_steps = int(p_steps)
@@ -51,6 +52,7 @@ class event_chain:
                for y in range(self.num_boxes):
                     if y_i < 1 - self.rad_spheres and x_i < 1 - self.rad_spheres and i < self.num_spheres:
                          self.spheres[x].append([sphere(self.rad_spheres,[x_i,y_i],str(i))])
+                         self.sphere_locations[str(i)] = (x,y)
                          i += 1
                     else:
                          self.spheres[x].append([])
@@ -143,12 +145,6 @@ class event_chain:
                next_point, box_dir = self.next_box_entry_point(curr_point,slope,(x_dir,y_dir),curr_box)
                dist_moved = sqrt((curr_point[0] - next_point[0]) ** 2 + (curr_point[1] - next_point[1]) ** 2)
                dist_traveled += dist_moved
-               
-               if dist_moved > 1.0: # and (1.0 not in curr_point): #and (0.0 not in curr_point):
-                    print ("%.3f" % dist_moved,
-                         [("%.3f" % p) for p in curr_point],
-                         [("%.3f" % p) for p in next_point],
-                         [("%.3f" % p) for p in slope])
                
                next_box = (curr_box[0] + box_dir[0],curr_box[1] + box_dir[1])
                next_box = tuple([p % self.num_boxes for p in next_box])
@@ -259,14 +255,12 @@ class event_chain:
                plt.show(block=False)
           t0 = 0
           while t0 < t:
-               #TODO: generate random label instead of box
-               x_i = randint(0,self.num_boxes-1)
-               y_i = randint(0,self.num_boxes-1)
-               while not self.spheres[x_i][y_i]:
-                    x_i = randint(0,self.num_boxes-1)
-                    y_i = randint(0,self.num_boxes-1)
-               
-               z_i = randint(0,len(self.spheres[x_i][y_i])-1)
+               picked = str(randint(0,self.num_spheres - 1))
+               x_i,y_i = self.sphere_locations[picked]
+               z_i = None
+               for i in range(len(self.spheres[x_i][y_i])):
+                    if self.spheres[x_i][y_i][i].label == picked: 
+                         z_i = i
                
                angle = random() * 2 * pi
                slope = (sin(angle),cos(angle))
@@ -293,6 +287,8 @@ class event_chain:
                     temp_s.coords[0] = (temp_s.coords[0] + slope[1] * dist_traveled) % 1.0
                     temp_s.coords[1] = (temp_s.coords[1] + slope[0] * dist_traveled) % 1.0
                     self.spheres[int(temp_s.coords[0] / self.box_width)][int(temp_s.coords[1] / self.box_width)].append(temp_s)
+                    self.sphere_locations[temp_s.label] = (int(temp_s.coords[0] / self.box_width),
+                                                           int(temp_s.coords[1] / self.box_width))
                     if self.display:
                          circ_index = int(temp_s.label)
                          i = 0
