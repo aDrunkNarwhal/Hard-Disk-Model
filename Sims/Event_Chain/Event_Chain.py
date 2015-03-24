@@ -212,15 +212,18 @@ class event_chain:
                          continue
                     x = sqrt(x_sq)
                     q = base - x
-                    if q < 0:       #TODO: This should never happen, but it does
+                    if q < 0:            #TODO: This should never happen, but it does
+                         print 'Q:',q
+                         q = 0.0         # Hackish solution
                          if self.display and self.not_quiet and self.debug:
+                              
                               circ_index = int(t_s.label)
                               i = 0
                               for x in L:
                                    for y in L:
                                         self.CIRCLES[circ_index * 9 + i].set_color('orange')
                                         i += 1
-                         continue
+                              continue
                     if self.display and self.not_quiet and self.debug:
                          circ_index = int(t_s.label)
                          i = 0
