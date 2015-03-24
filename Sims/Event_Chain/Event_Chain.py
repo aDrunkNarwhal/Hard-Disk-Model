@@ -79,28 +79,32 @@ class event_chain:
      def __len__(self):
           return self.num_spheres
      
-     def next_box_entry_point(self,point,slope,direction,line,box):
-          x_new = (box[0] + direction[0]) * self.box_width
-          if x_new > 1.0:
-               x_new = 1.0
+     def next_box_entry_point(self,point,slope,direction,box):
+          if direction[0] == -1:
+               x_new = box[0] * self.box_width
+          else:
+               x_new = (box[0] + 1) * self.box_width
+               if x_new > 1.0:
+                    x_new = 1.0
           
-          y_new = line['slope'] * x_new + line['y_int']
+          y_new = (slope[0]/slope[1])*(x_new - point[0]) + point[1]
           
           if y_new >= box[1] * self.box_width and y_new < (box[1] + 1) * self.box_width and y_new <= 1.0:
                return (x_new,y_new),(direction[0],0)
           
+          if direction[1] == -1:
+               y_new = box[1] * self.box_width
+          else:
+               y_new = (box[1] + 1) * self.box_width
+               if y_new > 1.0:
+                    y_new = 1.0
           
-          y_new = (box[1] + direction[1]) * self.box_width
-          if y_new > 1.0:
-               y_new = 1.0
-          
-          x_new = (y_new - line['y_int']) / line['slope']
+          x_new = (slope[1]/slope[0])*(y_new - point[1]) + point[0]
           
           return (x_new,y_new),(0,direction[1])
-     
+          
      def add_boxes(self,box_list,center_box,center_shift):
           
-          L = [-1,0,1]
           for x in L:
                for y in L:
                     
@@ -121,11 +125,6 @@ class event_chain:
                     del(temp_dict)
      
      def find_boxes_to_check(self,s,box,slope,dist_left):
-          
-          line = {}
-          line['slope'] = slope[0]/slope[1]
-          line['y_int'] = s.coords[1] - line['slope'] * s.coords[0]
-          
           x_dir = 1
           if slope[1] < 0:
                x_dir = -1
@@ -141,8 +140,15 @@ class event_chain:
           self.add_boxes(box_list,curr_box,(0,0))
           
           while dist_traveled < dist_left:
-               next_point, box_dir = self.next_box_entry_point(curr_point,slope,(x_dir,y_dir),line,curr_box)
-               dist_traveled += sqrt((curr_point[0] - next_point[0]) ** 2 + (curr_point[1] - next_point[1]) ** 2)
+               next_point, box_dir = self.next_box_entry_point(curr_point,slope,(x_dir,y_dir),curr_box)
+               dist_moved = sqrt((curr_point[0] - next_point[0]) ** 2 + (curr_point[1] - next_point[1]) ** 2)
+               dist_traveled += dist_moved
+               
+               if dist_moved > 1.0: # and (1.0 not in curr_point): #and (0.0 not in curr_point):
+                    print ("%.3f" % dist_moved,
+                         [("%.3f" % p) for p in curr_point],
+                         [("%.3f" % p) for p in next_point],
+                         [("%.3f" % p) for p in slope])
                
                next_box = (curr_box[0] + box_dir[0],curr_box[1] + box_dir[1])
                next_box = tuple([p % self.num_boxes for p in next_box])
@@ -153,6 +159,16 @@ class event_chain:
                     x_shift = x_dir
                if (next_box[1] - box[1]) * y_dir < 0.0:
                     y_shift = y_dir
+               
+               if next_point[0] == 1.0 and next_box[0] == 0:
+                    next_point = (0.0,next_point[1])
+               elif next_point[0] == 0.0 and next_box[0] == (self.num_boxes - 1):
+                    next_point = (1.0,next_point[1])
+               
+               if next_point[1] == 1.0 and next_box[1] == 0:
+                    next_point = (next_point[0],0.0)
+               elif next_point[1] == 0.0 and next_box[1] == (self.num_boxes - 1):
+                    next_point = (next_point[0],1.0)
                
                self.add_boxes(box_list,next_box,(x_shift,y_shift))
                          
